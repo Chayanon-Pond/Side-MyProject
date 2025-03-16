@@ -9,6 +9,7 @@ function App() {
     <>
       <Navbar/>
       <HerroSection/>
+      <button class="btn">Button</button>
 
     </>
   )
