@@ -1,6 +1,6 @@
 const HerroSection = () => {
     return (
-        <div>
+        <div className="bg-white">
             <div className="flex flex-col md:flex-row items-center justify-center w-full px-10 py-16  md:grid grid-cols-3 gap-10 ">
                 <div className="md:w-[343px] md:h-[276px] text-center md:text-left ">
                     <h1 className="text-4xl font-bold leading-tight text-[#26231E]">
