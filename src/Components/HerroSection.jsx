@@ -1,3 +1,4 @@
+import ArticleSection from "./ArticleSection";
 const HerroSection = () => {
     return (
         <div className="bg-white">
@@ -33,6 +34,10 @@ const HerroSection = () => {
                             </div>
     
             </div>
+            <div className="container mx-auto">
+                <ArticleSection/>
+            </div>
+           
         </div>
   
 

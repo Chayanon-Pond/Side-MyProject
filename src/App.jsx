@@ -5,15 +5,14 @@ import HerroSection from './Components/HerroSection'
 import FooterSection from './Components/FooterSection'
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
-    <>
+    <div className='bg-white'>
       <Navbar/>
       <HerroSection/>
       <FooterSection/>
 
-    </>
+    </div>
   )
 }
 
