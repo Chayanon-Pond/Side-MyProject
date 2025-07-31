@@ -1,5 +1,6 @@
 import Navbar from "../Components/NavbarSection";
-import React, { useState, useEffect, useNavigate } from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -24,7 +25,7 @@ const Login = () => {
       <div>
         <div className="bg-gray-50 min-h-screen">
           <Navbar />
-          <div className="container mx-auto py-16 px-4">
+          <div className="container mx-auto py-16 px-4 mt-24">
             <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-8">
               <h1 className="text-2xl font-bold text-center mb-8 text-gray-800">
                 Log in
@@ -42,7 +43,7 @@ const Login = () => {
                     placeholder="Email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 placeholder-gray-400"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 placeholder-gray-400 text-black"
                     required
                   />
                 </div>
@@ -58,7 +59,7 @@ const Login = () => {
                     placeholder="Password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 placeholder-gray-400"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 placeholder-gray-400 text-black"
                     required
                   />
                 </div>
@@ -68,7 +69,7 @@ const Login = () => {
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    className="w-full bg-gray-800 text-white py-3 px-4 rounded-lg hover:bg-gray-900 transition-colors duration-200 font-medium"
+                    className="w-full bg-gray-800 text-white py-3 px-4 rounded-lg hover:bg-gray-900 transition-colors duration-200 font-medium cursor-pointer"
                   >
                     Log in
                   </button>
@@ -79,12 +80,12 @@ const Login = () => {
               <div className="text-center mt-6">
                 <p className="text-gray-600 text-sm">
                   Don't have any account?{" "}
-                  <a
-                    href="#"
+                  <Link
+                    to="/register"
                     className="text-gray-800 font-medium hover:underline"
                   >
                     Sign up
-                  </a>
+                  </Link>
                 </p>
               </div>
             </div>
