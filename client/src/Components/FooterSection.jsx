@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function FooterSection() {
   return (
     <footer className="bg-black text-white">
@@ -43,7 +45,9 @@ function FooterSection() {
             </div>
           </div>
           <div className="hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer ">
-            <h3>Home Page</h3>
+            <Link to="/">
+              <h3>Home Page</h3>
+            </Link>
           </div>
         </div>
       </div>
