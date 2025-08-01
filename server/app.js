@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import authRouter from './apps/auth.js';
+import articlesRouter from './routes/articles/articles-main.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRouter);
+app.use('/api/articles', articlesRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

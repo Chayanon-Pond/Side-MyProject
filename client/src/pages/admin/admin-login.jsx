@@ -1,15 +1,12 @@
 import React, { useState } from "react";
-import Navbar from "../Components/NavbarSection";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/authentication";
 
-const Register = () => {
-  const { register, state } = useAuth();
+const LoginAdmin = () => {
+  const { login, state } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    fullName: "",
-    username: "",
     email: "",
     password: "",
   });
@@ -24,6 +21,7 @@ const Register = () => {
       [name]: value,
     });
 
+    // Clear error when user starts typing
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -35,14 +33,6 @@ const Register = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-    }
-
-    if (!formData.username.trim()) {
-      newErrors.username = "Username is required";
-    }
-
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -51,8 +41,6 @@ const Register = () => {
 
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
     }
 
     return newErrors;
@@ -61,18 +49,18 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate form
     const validationErrors = validateForm();
-
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
 
-    const result = await register(formData);
+    // Call login from AuthContext
+    const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      alert("Registration successful! Please login with your new account.");
-      navigate("/login");
+      navigate("/admin/dashboard"); // Redirect to home page after successful login
     } else {
       setErrors({ submit: result.error });
     }
@@ -80,48 +68,13 @@ const Register = () => {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="bg-white p-8 rounded-lg shadow-sm w-full max-w-md">
-          <h1 className="text-2xl  text-center mb-8 text-gray-900 font-bold">
-            Sign up
+          <h1 className="text-2xl text-center mb-8 text-gray-900 font-bold">
+            Log in
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Full Name Field */}
-            <div>
-              <label className="block text-sm text-gray-600 mb-2">Name</label>
-              <input
-                type="text"
-                name="fullName"
-                placeholder="Full name"
-                value={formData.fullName}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 placeholder-gray-400 text-black"
-              />
-              {errors.fullName && (
-                <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
-              )}
-            </div>
-
-            {/* Username Field */}
-            <div>
-              <label className="block text-sm text-gray-600 mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                name="username"
-                placeholder="Username"
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 placeholder-gray-400 text-black"
-              />
-              {errors.username && (
-                <p className="text-red-500 text-xs mt-1">{errors.username}</p>
-              )}
-            </div>
-
             {/* Email Field */}
             <div>
               <label className="block text-sm text-gray-600 mb-2">Email</label>
@@ -138,7 +91,7 @@ const Register = () => {
               )}
             </div>
 
-            {/* Password Field */}
+            {/* Password Field with Toggle */}
             <div>
               <label className="block text-sm text-gray-600 mb-2">
                 Password
@@ -199,13 +152,23 @@ const Register = () => {
               )}
             </div>
 
+            {/* Forgot Password Link */}
+            <div className="text-right">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             {/* Submit Button */}
             <button
               type="submit"
               disabled={state?.loading}
               className="w-full py-2.5 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
             >
-              {state?.loading ? "Creating Account..." : "Sign up"}
+              {state?.loading ? "Logging in..." : "Log in"}
             </button>
 
             {/* Error Message */}
@@ -215,20 +178,10 @@ const Register = () => {
               </div>
             )}
           </form>
-
-          {/* Login Link */}
-          <div className="text-center mt-6">
-            <p className="text-gray-600 text-sm">
-              Already have an account?{" "}
-              <Link to="/login" className="text-gray-900 hover:underline">
-                Log in
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </>
   );
 };
 
-export default Register;
+export default LoginAdmin;
