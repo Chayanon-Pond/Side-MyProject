@@ -8,8 +8,11 @@ import Login from "./pages/Login";
 import AdminLayout from "./Components/ui/AdminLayout";
 import Dashboard from "./pages/admin/dashboard";
 import CreateArticle from "./pages/admin/create-article";
+import EditArticle from "./pages/admin/edit-article";
 import AdminLogin from "./pages/admin/admin-login";
 import CategoryManagement from "./pages/admin/category-management";
+import Profile from "./pages/admin/Profile";
+import Notification from "./pages/admin/notification";
 
 import { Toaster } from "sonner";
 function App() {
@@ -30,8 +33,12 @@ function App() {
                 path="dashboard/category"
                 element={<CategoryManagement />}
               />
+              <Route path="dashboard/profile" element={<Profile />} />
+              <Route path="dashboard/notification" element={<Notification />} />
               <Route path="create-article" element={<CreateArticle />} />
-              {/* <Route path="edit-article/:id" element={<EditArticle />} /> */}
+              <Route path="edit-article/:id" element={<EditArticle />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="notification" element={<Notification />} />
             </Route>
             
             {/* Admin Login Route (outside of AdminLayout) */}

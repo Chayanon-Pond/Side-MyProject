@@ -5,7 +5,8 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import authRouter from './apps/auth.js';
 import articlesRouter from './routes/articles/articles-main.js';
-import categoriesRouter from './routes/api/categories/categories-main.js';
+import categoriesRouter from './routes/categories/categories-main.js';
+import notificationsRouter from './routes/notifications/notifications-main.js';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRouter);
 app.use('/api/articles', articlesRouter);
 app.use('/api/categories', categoriesRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -122,12 +122,22 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  // Update user function
+  const updateUser = (userData) => {
+    localStorage.setItem("user", JSON.stringify(userData));
+    setState((prev) => ({
+      ...prev,
+      user: userData,
+    }));
+  };
+
   // Context value
   const value = {
     ...state,
     register,
     login,
     logout,
+    updateUser,
   };
 
   return (
