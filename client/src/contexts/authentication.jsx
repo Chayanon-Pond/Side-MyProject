@@ -52,8 +52,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Login function
-  const login = async (email, password) => {
+  // Login function - รองรับการเรียกใช้ทั้งสองแบบ
+  const login = async (emailOrToken, passwordOrUser) => {
+    // ถ้าเป็นการเรียกใช้แบบใหม่ (token, user)
+    if (typeof emailOrToken === 'string' && typeof passwordOrUser === 'object' && passwordOrUser.hasOwnProperty('id')) {
+      const token = emailOrToken;
+      const user = passwordOrUser;
+      
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", token);
+
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        user: user,
+        token: token,
+      }));
+
+      return { success: true, message: "Login successful!" };
+    }
+    
+    // การเรียกใช้แบบเดิม (email, password)
+    const email = emailOrToken;
+    const password = passwordOrUser;
+    
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {

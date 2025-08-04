@@ -50,14 +50,24 @@ const Dashboard = () => {
 
       const response = await api.get("/articles", { params });
 
-      setArticles(response.data.articles);
+      // Handle different response structures
+      const articlesData =
+        response.data?.articles || response.data?.data || response.data || [];
+      const paginationData = response.data?.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        total: 0,
+      };
+
+      setArticles(Array.isArray(articlesData) ? articlesData : []);
       setPagination((prev) => ({
         ...prev,
-        ...response.data.pagination,
+        ...paginationData,
       }));
     } catch (error) {
       console.error("Failed to fetch articles:", error);
       toast.error("Failed to load articles");
+      setArticles([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -67,9 +77,12 @@ const Dashboard = () => {
   const fetchCategories = async () => {
     try {
       const response = await api.get("/categories");
-      setCategories(response.data);
+      // Handle different response structures
+      const categoriesData = response.data?.data || response.data || [];
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
+      setCategories([]); // Set empty array on error
     }
   };
 

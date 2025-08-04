@@ -1,17 +1,7 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
 import connectionPool from '../../utils/database.js';
-import { upload, deleteFile } from '../../middleware/upload.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const generateSlug = (text) => {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-};
+import { upload } from '../../middleware/upload.js';
+import { generateSlug } from '../../../utils/helpers.js';
+import fs from 'fs/promises';
 
 // Create new article
 export const createArticle = async (req, res) => {
@@ -35,18 +25,10 @@ export const createArticle = async (req, res) => {
       
       const author_id = req.user.userId; // From JWT token
       
-      // Validation
-      if (!title || !content || !category_id) {
-        return res.status(400).json({ 
-          error: 'Title, content, and category are required' 
-        });
-      }
+      // Validation is handled by validator middleware
       
       // Generate slug if not provided
-      const finalSlug = slug || title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
+      const finalSlug = slug || generateSlug(title);
       
       // Check if slug already exists
       const slugCheck = await connectionPool.query(
@@ -55,6 +37,15 @@ export const createArticle = async (req, res) => {
       );
       
       if (slugCheck.rows.length > 0) {
+        // If file was uploaded, delete it
+        if (req.file) {
+          try {
+            await fs.unlink(req.file.path);
+          } catch (unlinkError) {
+            console.error('Failed to delete uploaded file:', unlinkError);
+          }
+        }
+        
         return res.status(400).json({ 
           error: 'An article with this slug already exists' 
         });
@@ -71,24 +62,24 @@ export const createArticle = async (req, res) => {
       try {
         // Insert article
         const articleResult = await connectionPool.query(
-  `INSERT INTO articles (
-    title, slug, excerpt, content, author_id, category_id,
-    featured_image_url, featured_image_alt, status, published_at
-  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
-  RETURNING *`,
-  [
-    title, 
-    finalSlug, 
-    excerpt || null, 
-    content, 
-    author_id, 
-    category_id,
-    featured_image_url, 
-    featured_image_alt || null, 
-    status, 
-    status === 'published' ? new Date() : null
-  ]
-);
+          `INSERT INTO articles (
+            title, slug, excerpt, content, author_id, category_id,
+            featured_image_url, featured_image_alt, status, published_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+          RETURNING *`,
+          [
+            title, 
+            finalSlug, 
+            excerpt || null, 
+            content, 
+            author_id, 
+            category_id,
+            featured_image_url, 
+            featured_image_alt || null, 
+            status, 
+            status === 'published' ? new Date() : null
+          ]
+        );
         
         const article = articleResult.rows[0];
         
@@ -103,7 +94,7 @@ export const createArticle = async (req, res) => {
                VALUES ($1, $2) 
                ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
                RETURNING id`,
-              [tagName, tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-')]
+              [tagName, generateSlug(tagName)]
             );
             
             // Link tag to article
@@ -151,7 +142,6 @@ export const createArticle = async (req, res) => {
       
       // Delete uploaded file if database operation failed
       if (req.file) {
-        const fs = await import('fs/promises');
         try {
           await fs.unlink(req.file.path);
         } catch (unlinkError) {

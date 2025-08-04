@@ -1,30 +1,69 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCustomToast } from "../../Components/ui/CustomToast";
+import { useAuth } from "../../contexts/authentication";
+import axios from "axios";
 
 const CreateArticle = () => {
   const navigate = useNavigate();
   const toast = useCustomToast();
+  const { token } = useAuth();
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: "",
-    category: "",
-    introduction: "",
+    category_id: "",
+    excerpt: "",
     content: "",
-    authorName: "",
-    thumbnail: null,
+    featured_image_alt: "",
+    tags: "",
   });
 
   const [previewImage, setPreviewImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Create axios instance
+  const api = axios.create({
+    baseURL: "http://localhost:5000/api",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get("/categories");
+      // Handle different response structures
+      const categoriesData = response.data?.data || response.data || [];
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+      toast.error("Failed to load categories");
+      setCategories([]); // Set empty array on error
+    }
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result);
-        setFormData({ ...formData, thumbnail: file });
+        setImageFile(file);
       };
       reader.readAsDataURL(file);
     }
@@ -35,25 +74,87 @@ const CreateArticle = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSaveDraft = async () => {
-    try {
-      // API call to save as draft
-      console.log("Save as draft:", { ...formData, status: "draft" });
-      toast.success("Article saved as draft");
-      navigate("/admin/dashboard");
-    } catch (error) {
-      toast.error("Failed to save draft");
+  const validateForm = () => {
+    if (!formData.title.trim()) {
+      toast.error("Title is required");
+      return false;
     }
+    if (!formData.category_id) {
+      toast.error("Category is required");
+      return false;
+    }
+    if (!formData.content.trim()) {
+      toast.error("Content is required");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSaveDraft = async () => {
+    if (!validateForm()) return;
+    await saveArticle("draft");
   };
 
   const handlePublish = async () => {
+    if (!validateForm()) return;
+    await saveArticle("published");
+  };
+
+  const saveArticle = async (status) => {
+    setLoading(true);
+    const loadingToast = toast.loading(
+      status === "published" ? "Publishing article..." : "Saving draft..."
+    );
+
     try {
-      // API call to publish
-      console.log("Publish:", { ...formData, status: "published" });
-      toast.success("Article published successfully");
+      // Create FormData for multipart upload
+      const formDataToSend = new FormData();
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("content", formData.content);
+      formDataToSend.append("category_id", formData.category_id);
+      formDataToSend.append("excerpt", formData.excerpt || "");
+      formDataToSend.append(
+        "featured_image_alt",
+        formData.featured_image_alt || ""
+      );
+      formDataToSend.append("tags", formData.tags || "");
+      formDataToSend.append("status", status);
+
+      // Add image if exists
+      if (imageFile) {
+        formDataToSend.append("featured_image", imageFile);
+      }
+
+      // Make API call
+      const response = await api.post("/articles", formDataToSend, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      toast.dismiss(loadingToast);
+      toast.success(
+        response.data.message ||
+          `Article ${
+            status === "published" ? "published" : "saved"
+          } successfully`
+      );
+
+      // Navigate back to dashboard
       navigate("/admin/dashboard");
     } catch (error) {
-      toast.error("Failed to publish article");
+      toast.dismiss(loadingToast);
+      console.error("Save article error:", error);
+
+      if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error(
+          `Failed to ${status === "published" ? "publish" : "save"} article`
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,7 +168,7 @@ const CreateArticle = () => {
         {/* Thumbnail Upload */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Thumbnail image
+            Featured image
           </label>
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -84,7 +185,7 @@ const CreateArticle = () => {
                   onClick={(e) => {
                     e.stopPropagation();
                     setPreviewImage(null);
-                    setFormData({ ...formData, thumbnail: null });
+                    setImageFile(null);
                   }}
                   className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100"
                 >
@@ -119,7 +220,7 @@ const CreateArticle = () => {
                   />
                 </svg>
                 <p className="mt-2 text-sm text-gray-600">
-                  Upload thumbnail image
+                  Upload featured image (Max 5MB)
                 </p>
               </div>
             )}
@@ -131,45 +232,43 @@ const CreateArticle = () => {
               className="hidden"
             />
           </div>
+          {imageFile && (
+            <input
+              type="text"
+              name="featured_image_alt"
+              value={formData.featured_image_alt}
+              onChange={handleChange}
+              placeholder="Image alt text (for SEO)"
+              className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 text-black"
+            />
+          )}
         </div>
 
         {/* Category */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Category
+            Category <span className="text-red-500">*</span>
           </label>
           <select
-            name="category"
-            value={formData.category}
+            name="category_id"
+            value={formData.category_id}
             onChange={handleChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 text-black cursor-pointer"
+            required
           >
             <option value="">Select category</option>
-            <option value="Cat">Cat</option>
-            <option value="General">General</option>
-            <option value="Inspiration">Inspiration</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
           </select>
-        </div>
-
-        {/* Author Name */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Author name
-          </label>
-          <input
-            type="text"
-            name="authorName"
-            value={formData.authorName}
-            onChange={handleChange}
-            placeholder="chayanon p."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 text-black"
-          />
         </div>
 
         {/* Title */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Title
+            Title <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -178,53 +277,59 @@ const CreateArticle = () => {
             onChange={handleChange}
             placeholder="Article title"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 text-black"
+            required
           />
         </div>
 
-        {/* Introduction */}
+        {/* Excerpt */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Introduction (max 120 letters)
+            Excerpt (Short description)
           </label>
           <textarea
-            name="introduction"
-            value={formData.introduction}
+            name="excerpt"
+            value={formData.excerpt}
             onChange={handleChange}
-            placeholder="Introduction"
-            maxLength={120}
+            placeholder="Brief description of your article"
+            maxLength={300}
             rows={3}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 resize-none text-black"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            {formData.excerpt.length}/300 characters
+          </p>
         </div>
 
         {/* Content */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Content
+            Content <span className="text-red-500">*</span>
           </label>
           <textarea
             name="content"
             value={formData.content}
             onChange={handleChange}
-            placeholder="Content"
+            placeholder="Write your article content here..."
             rows={15}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 resize-none text-black"
+            required
           />
         </div>
-
         {/* Action Buttons */}
         <div className="flex justify-end gap-4">
           <button
             onClick={handleSaveDraft}
-            className="px-6 py-2 border border-gray-300 rounded-full hover:bg-blue-600 transition-colors cursor-pointer bg-blue-300"
+            disabled={loading}
+            className="px-6 py-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save as draft
+            {loading ? "Saving..." : "Save as draft"}
           </button>
           <button
             onClick={handlePublish}
-            className="px-6 py-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
+            disabled={loading}
+            className="px-6 py-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save and publish
+            {loading ? "Publishing..." : "Save and publish"}
           </button>
         </div>
       </div>
