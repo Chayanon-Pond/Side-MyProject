@@ -1,0 +1,7 @@
+.input-dark-text {
+  color: #111827; /* gray-900 */
+}
+
+.input-dark-text::placeholder {
+  color: #9CA3AF; /* gray-400 */
+}
