@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import authRouter from './apps/auth.js';
 import articlesRouter from './routes/articles/articles-main.js';
+import categoriesRouter from './routes/api/categories/categories-main.js';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', authRouter);
 app.use('/api/articles', articlesRouter);
+app.use('/api/categories', categoriesRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

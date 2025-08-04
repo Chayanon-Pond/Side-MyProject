@@ -39,15 +39,15 @@ authRouter.post("/register", async (req, res) => {
 
     // Insert user to database
     const result = await connectionPool.query(
-      'INSERT INTO users (full_name, username, email, password_hash) VALUES ($1, $2, $3, $4) RETURNING id, full_name, username, email',
-      [user.full_name, user.username, user.email, user.password]
+      'INSERT INTO users (full_name, username, email, password_hash, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, full_name, username, email, role',
+      [user.full_name, user.username, user.email, user.password, 'user'] // default role is 'user'
     );
 
     const newUser = result.rows[0];
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: newUser.id, username: newUser.username },
+      { userId: newUser.id, username: newUser.username, role: newUser.role },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -58,7 +58,8 @@ authRouter.post("/register", async (req, res) => {
         id: newUser.id,
         fullName: newUser.full_name,
         username: newUser.username,
-        email: newUser.email
+        email: newUser.email,
+        role: newUser.role
       },
       token
     });
@@ -75,28 +76,37 @@ authRouter.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log("=== LOGIN DEBUG ===");
+    console.log("Email:", email);
+    console.log("Password received:", password);
+
     // Find user
     const result = await connectionPool.query(
-      'SELECT id, full_name, username, email, password_hash FROM users WHERE email = $1',
+      'SELECT id, full_name, username, email, password_hash, role FROM users WHERE email = $1',
       [email]
     );
 
     if (result.rows.length === 0) {
-      return res.status(400).json({ error: "Invalid credentials" });
+      console.log("User not found");
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const user = result.rows[0];
+    console.log("User found:", user.full_name);
+    console.log("Password hash in DB:", user.password_hash);
 
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    console.log("Password valid:", isValidPassword);
     
     if (!isValidPassword) {
-      return res.status(400).json({ error: "Invalid credentials" });
+      console.log("Password mismatch!");
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     // Generate token
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
+      { userId: user.id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -107,7 +117,8 @@ authRouter.post("/login", async (req, res) => {
         id: user.id,
         fullName: user.full_name,
         username: user.username,
-        email: user.email
+        email: user.email,
+        role: user.role
       },
       token
     });

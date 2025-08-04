@@ -1,187 +1,122 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/authentication";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/authentication";
+import { useCustomToast } from "../../Components/ui/CustomToast";
+import axios from "axios";
 
-const LoginAdmin = () => {
-  const { login, state } = useAuth();
+const AdminLogin = () => {
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
-  const [errors, setErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
+  const toast = useCustomToast();
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: "",
-      });
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    }
-
-    return newErrors;
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate form
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+    
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
       return;
     }
 
-    // Call login from AuthContext
-    const result = await login(formData.email, formData.password);
+    setLoading(true);
+    
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/login", {
+        email: formData.email,
+        password: formData.password,
+      });
 
-    if (result.success) {
-      navigate("/admin/dashboard"); // Redirect to home page after successful login
-    } else {
-      setErrors({ submit: result.error });
+      // Check if user is admin
+      if (response.data.user && response.data.user.role !== 'admin') {
+        toast.error("Access denied. Admin privileges required.");
+        return;
+      }
+
+      // Login success
+      login(response.data.token, response.data.user);
+      toast.success("Login successful! Welcome to admin panel");
+      navigate("/admin/dashboard");
+      
+    } catch (error) {
+      console.error("Login error:", error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Invalid email or password");
+      } else if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error("Login failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow-sm w-full max-w-md">
-          <h1 className="text-2xl text-center mb-8 text-gray-900 font-bold">
-            Log in
-          </h1>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-gray-100 rounded-xl p-8 w-full max-w-md shadow-md">
+        <p className="text-sm text-amber-400 mb-1 font-medium">Admin panel</p>
+        <h2 className="text-2xl font-bold mb-6">Log in</h2>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
-            <div>
-              <label className="block text-sm text-gray-600 mb-2">Email</label>
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 placeholder-gray-400 text-black"
-              />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-              )}
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="email" className="block text-sm mb-1 text-gray-700">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 text-black"
+              required
+            />
+          </div>
 
-            {/* Password Field with Toggle */}
-            <div>
-              <label className="block text-sm text-gray-600 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 placeholder-gray-400 text-black"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? (
-                    <svg
-                      className="w-5 h-5 cursor-pointer"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-5 h-5 cursor-pointer"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                  )}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-              )}
-            </div>
-
-            {/* Forgot Password Link */}
-            <div className="text-right">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                Forgot password?
-              </Link>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={state?.loading}
-              className="w-full py-2.5 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm mb-1 text-gray-700"
             >
-              {state?.loading ? "Logging in..." : "Log in"}
-            </button>
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 text-black"
+              required
+            />
+          </div>
 
-            {/* Error Message */}
-            {(errors.submit || state?.error) && (
-              <div className="text-red-500 text-sm text-center">
-                {errors.submit || state?.error}
-              </div>
-            )}
-          </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-black text-white rounded-full px-8 py-3 text-sm font-medium hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Signing in..." : "Log in"}
+          </button>
+        </form>
+
+        {/* Demo credentials info */}
+        <div className="mt-6 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-xs text-amber-700 font-medium mb-1">Demo Admin Credentials:</p>
+          <p className="text-xs text-amber-600">Email: admin@example.com</p>
+          <p className="text-xs text-amber-600">Password: admin123</p>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
-export default LoginAdmin;
+export default AdminLogin;
