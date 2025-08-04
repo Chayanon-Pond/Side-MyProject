@@ -13,6 +13,7 @@ import AdminLogin from "./pages/admin/admin-login";
 import CategoryManagement from "./pages/admin/category-management";
 import Profile from "./pages/admin/Profile";
 import Notification from "./pages/admin/notification";
+import ResetPassword from "./pages/admin/resetPassword";
 
 import { Toaster } from "sonner";
 function App() {
@@ -39,6 +40,7 @@ function App() {
               <Route path="edit-article/:id" element={<EditArticle />} />
               <Route path="profile" element={<Profile />} />
               <Route path="notification" element={<Notification />} />
+              <Route path="reset-password" element={<ResetPassword />} />
             </Route>
             
             {/* Admin Login Route (outside of AdminLayout) */}
