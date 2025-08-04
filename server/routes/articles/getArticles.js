@@ -160,11 +160,15 @@ export const getArticleById = async (req, res) => {
         c.slug as category_slug,
         u.full_name as author_name,
         u.username as author_username,
-        u.email as author_email
+        u.email as author_email,
+        array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL) as tags
       FROM articles a
       LEFT JOIN categories c ON a.category_id = c.id
       LEFT JOIN users u ON a.author_id = u.id
+      LEFT JOIN article_tags at ON a.id = at.article_id
+      LEFT JOIN tags t ON at.tag_id = t.id
       WHERE ${isNumeric ? 'a.id = $1' : 'a.slug = $1'}
+      GROUP BY a.id, c.name, c.slug, u.full_name, u.username, u.email
     `;
     
     const result = await connectionPool.query(query, [id]);
@@ -172,9 +176,10 @@ export const getArticleById = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Article not found' });
     }
+
+    const article = result.rows[0];
     
     // Get related articles
-    const article = result.rows[0];
     const relatedQuery = `
       SELECT 
         id, title, slug, excerpt, featured_image_url, 
@@ -186,14 +191,14 @@ export const getArticleById = async (req, res) => {
       ORDER BY RANDOM() 
       LIMIT 3
     `;
-    
+
     const relatedResult = await connectionPool.query(
       relatedQuery, 
       [article.category_id, article.id]
     );
-    
+
     res.json({
-      article: article,
+      data: article,
       relatedArticles: relatedResult.rows
     });
   } catch (error) {

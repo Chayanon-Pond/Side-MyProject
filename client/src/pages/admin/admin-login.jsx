@@ -17,34 +17,48 @@ const AdminLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.password) {
       toast.error("Please fill in all fields");
       return;
     }
 
     setLoading(true);
-    
+
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", {
-        email: formData.email,
-        password: formData.password,
-      });
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        {
+          email: formData.email,
+          password: formData.password,
+        }
+      );
 
       // Check if user is admin
-      if (response.data.user && response.data.user.role !== 'admin') {
+      if (response.data.user && response.data.user.role !== "admin") {
         toast.error("Access denied. Admin privileges required.");
         return;
       }
 
       // Login success
+      console.log("=== LOGIN SUCCESS DEBUG ===");
+      console.log("Response data:", response.data);
+      console.log("Token:", response.data.token);
+      console.log("User:", response.data.user);
+
       login(response.data.token, response.data.user);
+
+      // Check localStorage after login
+      setTimeout(() => {
+        console.log("LocalStorage token:", localStorage.getItem("token"));
+        console.log("LocalStorage user:", localStorage.getItem("user"));
+      }, 100);
+
       toast.success("Login successful! Welcome to admin panel");
       navigate("/admin/dashboard");
-      
     } catch (error) {
       console.error("Login error:", error);
-      
+
       if (error.response?.status === 401) {
         toast.error("Invalid email or password");
       } else if (error.response?.data?.error) {
@@ -102,7 +116,7 @@ const AdminLogin = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white rounded-full px-8 py-3 text-sm font-medium hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-black text-white rounded-full px-8 py-3 text-sm font-medium hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading ? "Signing in..." : "Log in"}
           </button>
@@ -110,7 +124,9 @@ const AdminLogin = () => {
 
         {/* Demo credentials info */}
         <div className="mt-6 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-xs text-amber-700 font-medium mb-1">Demo Admin Credentials:</p>
+          <p className="text-xs text-amber-700 font-medium mb-1">
+            Demo Admin Credentials:
+          </p>
           <p className="text-xs text-amber-600">Email: admin@example.com</p>
           <p className="text-xs text-amber-600">Password: admin123</p>
         </div>

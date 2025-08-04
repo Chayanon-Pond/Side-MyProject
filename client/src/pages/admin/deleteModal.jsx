@@ -40,7 +40,7 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, itemType = "item" }) => {
         <div className="flex justify-end gap-3 p-6 border-t">
           <button
             onClick={onClose}
-            className="px-6 py-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+            className="px-6 py-2 border border-cyan-700 rounded-full hover:bg-blue-600 transition-colors cursor-pointer bg-blue-400"
           >
             Cancel
           </button>
@@ -49,7 +49,7 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, itemType = "item" }) => {
               onConfirm();
               onClose();
             }}
-            className="px-6 py-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors"
+            className="px-6 py-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
           >
             Delete
           </button>

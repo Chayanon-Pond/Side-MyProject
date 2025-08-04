@@ -2,6 +2,9 @@ import jwt from "jsonwebtoken";
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import connectionPool from '../utils/database.js';
+import { authenticateToken } from '../middleware/auth.js';
+import { upload } from '../middleware/upload.js';
+import fs from 'fs/promises';
 
 const authRouter = Router();
 
@@ -127,6 +130,107 @@ authRouter.post("/login", async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({ error: "Failed to login" });
   }
+});
+
+// Update profile endpoint
+authRouter.put("/profile", authenticateToken, (req, res) => {
+  upload.single('profile_image')(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    try {
+      const { full_name, username, email, bio } = req.body;
+      const userId = req.user.userId;
+
+      // Validation
+      if (!full_name || !username || !email) {
+        return res.status(400).json({ 
+          error: "Full name, username, and email are required" 
+        });
+      }
+
+      // Check if username or email already exists for other users
+      const existingUser = await connectionPool.query(
+        'SELECT id FROM users WHERE (email = $1 OR username = $2) AND id != $3',
+        [email, username, userId]
+      );
+
+      if (existingUser.rows.length > 0) {
+        return res.status(400).json({ 
+          error: "Email or username already exists" 
+        });
+      }
+
+      // Handle profile image
+      let profile_image_url = null;
+      if (req.file) {
+        profile_image_url = `/uploads/profiles/${req.file.filename}`;
+        
+        // Delete old profile image if exists
+        try {
+          const oldUserResult = await connectionPool.query(
+            'SELECT profile_image_url FROM users WHERE id = $1',
+            [userId]
+          );
+          
+          if (oldUserResult.rows[0]?.profile_image_url) {
+            const oldImagePath = `./uploads/profiles/${oldUserResult.rows[0].profile_image_url.split('/').pop()}`;
+            await fs.unlink(oldImagePath);
+          }
+        } catch (unlinkError) {
+          console.log('Could not delete old profile image:', unlinkError.message);
+        }
+      }
+
+      // Update user profile
+      let updateQuery = `
+        UPDATE users 
+        SET full_name = $1, username = $2, email = $3, bio = $4, updated_at = CURRENT_TIMESTAMP
+      `;
+      let queryParams = [full_name, username, email, bio || null];
+
+      if (profile_image_url) {
+        updateQuery += `, profile_image_url = $5`;
+        queryParams.push(profile_image_url);
+      }
+
+      updateQuery += ` WHERE id = $${queryParams.length + 1} RETURNING *`;
+      queryParams.push(userId);
+
+      const result = await connectionPool.query(updateQuery, queryParams);
+      const updatedUser = result.rows[0];
+
+      res.json({
+        message: "Profile updated successfully",
+        user: {
+          id: updatedUser.id,
+          full_name: updatedUser.full_name,
+          username: updatedUser.username,
+          email: updatedUser.email,
+          bio: updatedUser.bio,
+          profile_image_url: updatedUser.profile_image_url,
+          role: updatedUser.role,
+          created_at: updatedUser.created_at,
+          updated_at: updatedUser.updated_at
+        }
+      });
+
+    } catch (error) {
+      console.error('Update profile error:', error);
+      
+      // Delete uploaded file if database operation failed
+      if (req.file) {
+        try {
+          await fs.unlink(req.file.path);
+        } catch (unlinkError) {
+          console.error('Failed to delete uploaded file:', unlinkError);
+        }
+      }
+      
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
 });
 
 

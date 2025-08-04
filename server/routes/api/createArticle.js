@@ -1,6 +1,6 @@
 import connectionPool from '../../utils/database.js';
 import { upload } from '../../middleware/upload.js';
-import { generateSlug } from '../../../utils/helpers.js';
+import { generateSlug } from '../../middleware/helpers.js';
 import fs from 'fs/promises';
 
 // Create new article
@@ -28,27 +28,24 @@ export const createArticle = async (req, res) => {
       // Validation is handled by validator middleware
       
       // Generate slug if not provided
-      const finalSlug = slug || generateSlug(title);
+      let baseSlug = slug || generateSlug(title);
+      let finalSlug = baseSlug;
+      let counter = 1;
       
-      // Check if slug already exists
-      const slugCheck = await connectionPool.query(
-        'SELECT id FROM articles WHERE slug = $1',
-        [finalSlug]
-      );
-      
-      if (slugCheck.rows.length > 0) {
-        // If file was uploaded, delete it
-        if (req.file) {
-          try {
-            await fs.unlink(req.file.path);
-          } catch (unlinkError) {
-            console.error('Failed to delete uploaded file:', unlinkError);
-          }
+      // Check if slug already exists and generate unique slug
+      while (true) {
+        const slugCheck = await connectionPool.query(
+          'SELECT id FROM articles WHERE slug = $1',
+          [finalSlug]
+        );
+        
+        if (slugCheck.rows.length === 0) {
+          break; // Slug is unique, break the loop
         }
         
-        return res.status(400).json({ 
-          error: 'An article with this slug already exists' 
-        });
+        // If slug exists, append counter and try again
+        finalSlug = `${baseSlug}-${counter}`;
+        counter++;
       }
       
       // Handle featured image

@@ -180,7 +180,7 @@ const CategoryManagement = () => {
           <div className="p-6 border-b">
             <div className="relative max-w-md">
               <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 "
                 size={20}
               />
               <input
@@ -188,7 +188,7 @@ const CategoryManagement = () => {
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-300 transition-colors"
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-300 transition-colors text-black"
               />
             </div>
           </div>
@@ -215,7 +215,7 @@ const CategoryManagement = () => {
                   filteredCategories.map((category) => (
                     <tr
                       key={category.id}
-                      className="border-b hover:bg-gray-50 transition-colors"
+                      className="border-b hover:bg-gray-50 transition-color"
                     >
                       <td className="px-6 py-4">
                         <div>
@@ -233,14 +233,14 @@ const CategoryManagement = () => {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditModal(category)}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             title="Edit"
                           >
                             <Edit3 size={18} />
                           </button>
                           <button
                             onClick={() => confirmDelete(category)}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                             title="Delete"
                           >
                             <Trash2 size={18} />
@@ -273,7 +273,7 @@ const CategoryManagement = () => {
               </h2>
               <button
                 onClick={closeModal}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
               >
                 <X size={20} className="text-gray-500" />
               </button>
@@ -301,7 +301,7 @@ const CategoryManagement = () => {
                         : newCategory.name
                     }
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors text-black"
                     placeholder="Category name"
                     autoFocus
                   />
@@ -318,7 +318,7 @@ const CategoryManagement = () => {
                         : newCategory.description
                     }
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors resize-none"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors resize-none text-black"
                     rows="3"
                     placeholder="Brief description of the category"
                   />
