@@ -46,7 +46,7 @@ export function Sidebar() {
     {
       id: "reset-password",
       name: "Reset password",
-      path: "/admin/dashboard/reset",
+      path: "/admin/reset-password",
       icon: TbRefresh,
     },
   ];
@@ -78,7 +78,7 @@ export function Sidebar() {
       {/* Logo Section */}
       <div className="p-6">
         <Link to="/" className="block">
-          <h1 className="text-2xl font-bold text-gray-800">hh.</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Porsche</h1>
         </Link>
         <p className="text-sm text-orange-500 mt-1">Admin panel</p>
       </div>
@@ -132,7 +132,7 @@ export function Sidebar() {
               d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
             />
           </svg>
-          <span className="text-sm">hh. website</span>
+          <span className="text-sm">Porsche. website</span>
         </a>
 
         {/* Logout Button */}
