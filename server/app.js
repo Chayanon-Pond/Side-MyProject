@@ -20,15 +20,31 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 app.use(cors({
-  origin: [
-    'https://side-my-project-two.vercel.app',
-    'https://side-myproject-git-dev-ponds-projects-dd08bd05.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://localhost:5174',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:3000'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'https://side-my-project-two.vercel.app',
+      'https://side-myproject-git-dev-ponds-projects-dd08bd05.vercel.app',
+      'https://side-my-project-git-d0bd05.vercel.app',
+      'https://side-myproject-production.up.railway.app',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:5174',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:3000'
+    ];
+    
+    // Check if origin is in allowed list or is a Vercel deployment
+    if (allowedOrigins.includes(origin) || 
+        origin.includes('vercel.app') || 
+        origin.includes('localhost')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -38,6 +54,23 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Side MyProject API Server', 
+    status: 'Running',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      articles: '/api/articles',
+      categories: '/api/categories',
+      notifications: '/api/notifications',
+      comments: '/api/comments',
+      profile: '/api/profile',
+      health: '/api/health'
+    }
+  });
+});
+
 app.use('/api/auth', authRouter);
 app.use('/api/articles', articlesRouter);
 app.use('/api/categories', categoriesRouter);
