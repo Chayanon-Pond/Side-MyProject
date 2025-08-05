@@ -7,6 +7,8 @@ import authRouter from './apps/auth.js';
 import articlesRouter from './routes/articles/articles-main.js';
 import categoriesRouter from './routes/categories/categories-main.js';
 import notificationsRouter from './routes/notifications/notifications-main.js';
+import commentsRouter from './routes/comments/comments-main.js';
+import profileRouter from './routes/profile/profile-main.js';
 
 dotenv.config();
 
@@ -28,6 +30,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/articles', articlesRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/comments', commentsRouter);
+app.use('/api/profile', profileRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
