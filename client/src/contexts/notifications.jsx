@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './authentication';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const NotificationContext = createContext();
 
 export const useNotifications = () => {
@@ -23,7 +25,7 @@ export const NotificationProvider = ({ children }) => {
     
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:4000/api/notifications', {
+      const response = await fetch(`${API_URL}/api/notifications`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -47,7 +49,7 @@ export const NotificationProvider = ({ children }) => {
     if (!token) return;
     
     try {
-      const response = await fetch(`http://localhost:4000/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_URL}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -75,7 +77,7 @@ export const NotificationProvider = ({ children }) => {
     if (!token) return;
     
     try {
-      const response = await fetch('http://localhost:4000/api/notifications/mark-all-read', {
+      const response = await fetch(`${API_URL}/api/notifications/mark-all-read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

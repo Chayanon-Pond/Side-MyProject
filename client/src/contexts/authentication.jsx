@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const AuthenContext = React.createContext();
 
 export const useAuth = () => {
@@ -25,7 +26,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/register",
+        `${API_URL}/api/auth/register`,
         data
       );
 
@@ -55,10 +56,14 @@ export const AuthProvider = ({ children }) => {
   // Login function - รองรับการเรียกใช้ทั้งสองแบบ
   const login = async (emailOrToken, passwordOrUser) => {
     // ถ้าเป็นการเรียกใช้แบบใหม่ (token, user)
-    if (typeof emailOrToken === 'string' && typeof passwordOrUser === 'object' && passwordOrUser.hasOwnProperty('id')) {
+    if (
+      typeof emailOrToken === "string" &&
+      typeof passwordOrUser === "object" &&
+      passwordOrUser.hasOwnProperty("id")
+    ) {
       const token = emailOrToken;
       const user = passwordOrUser;
-      
+
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("token", token);
 
@@ -71,16 +76,16 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, message: "Login successful!" };
     }
-    
+
     // การเรียกใช้แบบเดิม (email, password)
     const email = emailOrToken;
     const password = passwordOrUser;
-    
+
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        `${API_URL}/api/auth/login`,
         {
           email,
           password,

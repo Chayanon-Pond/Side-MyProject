@@ -4,6 +4,8 @@ import { useAuth } from "../contexts/authentication";
 import Navbar from "../Components/NavbarSection";
 import FooterSection from "../Components/FooterSection";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const ResetPassword = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -67,7 +69,7 @@ const ResetPassword = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:4000/api/profile/reset-password",
+        `${API_URL}/api/profile/reset-password`,
         {
           method: "PUT",
           headers: {

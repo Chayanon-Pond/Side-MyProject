@@ -8,6 +8,8 @@ import LoginModal from "./ui/LoginModal";
 import CommentForm from "./ui/CommentForm";
 import CommentList from "./ui/CommentList";
 import ArticleHeader from "./ui/ArticleHeader";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 import SocialShare from "./ui/SocialShare";
 
 function CardDetal() {
@@ -27,7 +29,7 @@ function CardDetal() {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: "http://localhost:5000/api",
+    baseURL: `${API_URL}/api`,
   });
 
   // Add token to requests if available
