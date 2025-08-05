@@ -11,36 +11,44 @@ function FooterSection() {
             </h3>
             <div className="flex flex-row gap-4">
               <img
-                src="./src/assets/logo/linkedin-logo.png"
+                src="/logo/linkedin-logo.png"
                 className="cursor-pointer"
+                alt="LinkedIn"
               />
               <img
-                src="./src/assets/logo/facebook-logo.png"
+                src="/logo/facebook-logo.png"
                 className="cursor-pointer"
+                alt="Facebook"
               />
               <img
-                src="./src/assets/logo/twitter-logo.png"
+                src="/logo/twitter-logo.png"
                 className="cursor-pointer"
+                alt="Twitter"
               />
               <img
-                src="./src/assets/logo/instagram-logo.png"
+                src="/logo/instagram-logo.png"
                 className="cursor-pointer"
+                alt="Instagram"
               />
               <img
-                src="./src/assets/logo/discord-logo.png"
+                src="/logo/discord-logo.png"
                 className="cursor-pointer"
+                alt="Discord"
               />
               <img
-                src="./src/assets/logo/github-logo.png"
+                src="/logo/github-logo.png"
                 className="cursor-pointer"
+                alt="GitHub"
               />
               <img
-                src="./src/assets/logo/youtube-logo.png"
+                src="/logo/youtube-logo.png"
                 className="cursor-pointer"
+                alt="YouTube"
               />
               <img
-                src="./src/assets/logo/tiktok-logo.png"
+                src="/logo/tiktok-logo.png"
                 className="cursor-pointer"
+                alt="TikTok"
               />
             </div>
           </div>

@@ -7,7 +7,7 @@ const Navbar = () => {
         <Link to="/">
           <img
             className="h-28"
-            src="./src/assets/logo/Porsche_car_logo.png"
+            src="/logo/Porsche_car_logo.png"
             alt="logo"
           ></img>
         </Link>
@@ -42,7 +42,7 @@ const Navbar = () => {
           data-collapse-toggle="navbar-hamburger"
           type="button"
         >
-          <img src="./src/assets/logo/hamberger.svg " alt="load"></img>
+          <img src="/logo/hamberger.svg" alt="hamburger menu"></img>
         </button>
       </div>
       <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>

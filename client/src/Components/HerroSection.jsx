@@ -17,8 +17,8 @@ const HerroSection = () => {
         </div>
         <div className=" overflow-hidden rounded-xl shadow-lg hover:scale-110 ease-in-out duration-300  w-full h-full">
           <img
-            src="./src/assets/img/mc_homepage.jpg"
-            alt="loding"
+            src="/img/mc_homepage.jpg"
+            alt="McLaren Homepage"
             className=" object-cover object-center   "
           />
         </div>
