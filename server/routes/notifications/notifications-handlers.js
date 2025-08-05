@@ -87,23 +87,11 @@ export const getNotifications = async (req, res) => {
   }
 };
 
-    res.json({
-      data: result.rows,
-      unread_count: parseInt(unreadCountResult.rows[0].unread_count),
-      total: result.rows.length
-    });
-
-  } catch (error) {
-    console.error('Get notifications error:', error);
-    res.status(500).json({ error: 'Failed to fetch notifications' });
-  }
-};
-
 // Mark a specific notification as read
 export const markNotificationAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user.id; // Changed from req.user.userId
 
     const result = await connectionPool.query(
       'UPDATE notifications SET is_read = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 RETURNING *',
@@ -128,7 +116,7 @@ export const markNotificationAsRead = async (req, res) => {
 // Mark all notifications as read for the user
 export const markAllNotificationsAsRead = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id; // Changed from req.user.userId
 
     await connectionPool.query(
       'UPDATE notifications SET is_read = true, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND is_read = false',
@@ -147,7 +135,7 @@ export const markAllNotificationsAsRead = async (req, res) => {
 export const deleteNotification = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user.id; // Changed from req.user.userId
 
     const result = await connectionPool.query(
       'DELETE FROM notifications WHERE id = $1 AND user_id = $2 RETURNING id',
