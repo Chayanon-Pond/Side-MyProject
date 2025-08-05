@@ -23,3 +23,4 @@ connectionPool.on('error', (err) => {
 });
 
 export default connectionPool;
+export { connectionPool as pool };
