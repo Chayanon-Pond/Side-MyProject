@@ -3,21 +3,25 @@ import connectionPool from '../../utils/database.js';
 // Get notifications for the authenticated user
 export const getNotifications = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id; // Changed from req.user.userId
     const { filter = 'all', limit = 50, offset = 0 } = req.query;
 
     let query = `
       SELECT 
-        id,
-        type,
-        title,
-        message,
-        data,
-        is_read,
-        created_at,
-        updated_at
-      FROM notifications 
-      WHERE user_id = $1
+        n.id,
+        n.type,
+        n.title,
+        n.message,
+        n.data,
+        n.is_read,
+        n.created_at,
+        n.updated_at,
+        u.full_name as sender_name,
+        u.profile_image as sender_avatar,
+        n.link
+      FROM notifications n
+      LEFT JOIN users u ON (n.data::json->>'sender_id')::int = u.id
+      WHERE n.user_id = $1
     `;
 
     const params = [userId];
@@ -25,13 +29,13 @@ export const getNotifications = async (req, res) => {
 
     // Apply filter
     if (filter === 'unread') {
-      query += ` AND is_read = false`;
+      query += ` AND n.is_read = false`;
     } else if (filter === 'read') {
-      query += ` AND is_read = true`;
+      query += ` AND n.is_read = true`;
     }
 
     // Add ordering and pagination
-    query += ` ORDER BY created_at DESC`;
+    query += ` ORDER BY n.created_at DESC`;
     
     paramCount++;
     query += ` LIMIT $${paramCount}`;
@@ -48,6 +52,40 @@ export const getNotifications = async (req, res) => {
       'SELECT COUNT(*) as unread_count FROM notifications WHERE user_id = $1 AND is_read = false',
       [userId]
     );
+
+    // Process notifications to add action text
+    const notifications = result.rows.map(notification => {
+      let action = '';
+      switch (notification.type) {
+        case 'comment':
+          action = 'commented on the article you have commented on.';
+          break;
+        case 'article_published':
+          action = 'published new article.';
+          break;
+        case 'like':
+          action = 'liked your comment.';
+          break;
+        default:
+          action = notification.title;
+      }
+      
+      return {
+        ...notification,
+        action
+      };
+    });
+
+    res.json({
+      notifications,
+      unreadCount: parseInt(unreadCountResult.rows[0].unread_count),
+      total: result.rows.length
+    });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
     res.json({
       data: result.rows,
