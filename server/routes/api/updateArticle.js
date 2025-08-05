@@ -24,7 +24,7 @@ export const updateArticle = async (req, res) => {
         remove_image // flag to remove existing image
       } = req.body;
       
-      const user_id = req.user.userId;
+      const user_id = req.user.id;
       
       // Check if article exists and user has permission
       const articleCheck = await connectionPool.query(

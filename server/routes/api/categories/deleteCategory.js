@@ -18,7 +18,7 @@ export const deleteCategory = async (req, res) => {
     const { id } = req.params;
     
     // Check if user is admin
-    const isAdmin = await checkAdminRole(req.user.userId);
+        const isAdmin = await checkAdminRole(req.user.id);
     if (!isAdmin) {
       return res.status(403).json({ error: 'Only admins can delete categories' });
     }

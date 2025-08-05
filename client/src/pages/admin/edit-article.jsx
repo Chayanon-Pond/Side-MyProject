@@ -5,6 +5,8 @@ import { useAuth } from "../../contexts/authentication";
 import DeleteModal from "./deleteModal";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const EditArticle = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -29,7 +31,7 @@ const EditArticle = () => {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: "http://localhost:5000/api",
+    baseURL: `${API_URL}/api`,
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -76,7 +78,7 @@ const EditArticle = () => {
       });
       
       if (article.featured_image_url) {
-        setPreviewImage(`http://localhost:5000${article.featured_image_url}`);
+        setPreviewImage(`${API_URL}${article.featured_image_url}`);
       }
       
       setLoading(false);

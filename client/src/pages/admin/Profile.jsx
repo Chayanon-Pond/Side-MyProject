@@ -4,6 +4,8 @@ import { useCustomToast } from "../../Components/ui/CustomToast";
 import { useAuth } from "../../contexts/authentication";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const Profile = () => {
   const navigate = useNavigate();
   const toast = useCustomToast();
@@ -23,7 +25,7 @@ const Profile = () => {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: "http://localhost:5000/api",
+    baseURL: `${API_URL}/api`,
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -47,7 +49,7 @@ const Profile = () => {
       });
 
       if (user.profile_image_url) {
-        setPreviewImage(`http://localhost:5000${user.profile_image_url}`);
+        setPreviewImage(`${API_URL}${user.profile_image_url}`);
       }
     }
   };

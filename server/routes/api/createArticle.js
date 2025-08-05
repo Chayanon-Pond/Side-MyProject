@@ -23,7 +23,7 @@ export const createArticle = async (req, res) => {
         tags // comma-separated string
       } = req.body;
       
-      const author_id = req.user.userId; // From JWT token
+      const author_id = req.user.id; // From JWT token
       
       // Validation is handled by validator middleware
       

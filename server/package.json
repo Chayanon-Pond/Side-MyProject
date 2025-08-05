@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo 'Build completed'",
+    "setup:production": "node setup-tables.js && node setup-categories.js && node setup-admin.js && node setup-sample-articles.js"
   },
   "keywords": [
     "express",

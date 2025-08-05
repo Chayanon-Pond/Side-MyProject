@@ -1,5 +1,7 @@
 import React from "react";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const ArticleTable = ({ articles, onEdit, onDelete }) => {
   const formatDate = (dateString) => {
     if (!dateString) return "-";
@@ -60,7 +62,7 @@ const ArticleTable = ({ articles, onEdit, onDelete }) => {
                 <div className="flex items-center ">
                   {article.featured_image_url && (
                     <img
-                      src={`http://localhost:5000${article.featured_image_url}`}
+                      src={`${API_URL}${article.featured_image_url}`}
                       alt={article.featured_image_alt || article.title}
                       className="h-10 w-10 rounded object-cover mr-3"
                       onError={(e) => {
