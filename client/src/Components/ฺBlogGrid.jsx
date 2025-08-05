@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import BlogCard from "./BlogCard";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 function BlogGrid() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,7 +11,7 @@ function BlogGrid() {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: "http://localhost:5000/api",
+    baseURL: `${API_URL}/api`,
   });
 
   useEffect(() => {

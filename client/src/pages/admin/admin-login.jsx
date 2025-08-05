@@ -4,6 +4,8 @@ import { useAuth } from "../../contexts/authentication";
 import { useCustomToast } from "../../Components/ui/CustomToast";
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const AdminLogin = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
@@ -27,7 +29,7 @@ const AdminLogin = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        `${API_URL}/api/auth/login`,
         {
           email: formData.email,
           password: formData.password,

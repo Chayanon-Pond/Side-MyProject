@@ -4,6 +4,8 @@ import axios from 'axios';
 import NavbarSection from '../Components/NavbarSection';
 import FooterSection from '../Components/FooterSection';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 function ArticleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -14,7 +16,7 @@ function ArticleDetail() {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: "http://localhost:5000/api",
+    baseURL: `${API_URL}/api`,
   });
 
   useEffect(() => {

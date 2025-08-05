@@ -4,6 +4,8 @@ import { useCustomToast } from "../../Components/ui/CustomToast";
 import axios from "axios";
 import { Plus, Search, Edit3, Trash2, X } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const CategoryManagement = () => {
   const { token } = useAuth();
   const toast = useCustomToast();
@@ -19,7 +21,7 @@ const CategoryManagement = () => {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: "http://localhost:5000/api",
+    baseURL: `${API_URL}/api`,
     headers: {
       Authorization: `Bearer ${token}`,
     },

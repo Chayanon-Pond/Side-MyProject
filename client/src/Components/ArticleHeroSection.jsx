@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const ArticleHeroSection = () => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -8,7 +10,7 @@ const ArticleHeroSection = () => {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: "http://localhost:5000/api",
+    baseURL: `${API_URL}/api`,
   });
 
   useEffect(() => {
@@ -124,7 +126,7 @@ const ArticleCard = ({ article }) => {
       <div className="relative h-48 overflow-hidden">
         <img
           src={article.featured_image_url ? 
-            `http://localhost:5000${article.featured_image_url}` : 
+            `${API_URL}${article.featured_image_url}` : 
             '/img/mc_homepage.jpg'
           }
           alt={article.featured_image_alt || article.title}
