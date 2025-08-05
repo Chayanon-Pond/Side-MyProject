@@ -99,9 +99,9 @@ async function createSampleArticles() {
       await connectionPool.query(`
         INSERT INTO articles (
           title, slug, excerpt, content, status, category_id, author_id, 
-          featured_image_alt, tags, created_at, updated_at, published_at
+          featured_image_alt, created_at, updated_at, published_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         ON CONFLICT (slug) DO NOTHING
       `, [
         article.title,
@@ -111,8 +111,7 @@ async function createSampleArticles() {
         article.status,
         article.category_id,
         article.author_id,
-        article.featured_image_alt,
-        article.tags
+        article.featured_image_alt
       ]);
     }
 
