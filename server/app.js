@@ -22,6 +22,7 @@ app.use(helmet({
 app.use(cors({
   origin: [
     'https://side-my-project-two.vercel.app',
+    'https://side-myproject-git-dev-ponds-projects-dd08bd05.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
     'http://localhost:5174',

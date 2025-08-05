@@ -50,7 +50,7 @@ async function createCategoriesTable() {
       await connectionPool.query(`
         INSERT INTO categories (name, description, slug)
         VALUES ($1, $2, $3)
-        ON CONFLICT (name) DO NOTHING
+        ON CONFLICT (slug) DO NOTHING
       `, [category.name, category.description, category.slug]);
     }
 
