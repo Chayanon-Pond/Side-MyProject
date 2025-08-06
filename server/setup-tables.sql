@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS articles (
     featured_image_url VARCHAR(500),
     featured_image_alt VARCHAR(255),
     status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+    view_count INTEGER DEFAULT 0,
     published_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -55,6 +55,14 @@ async function initializeDatabase() {
       
       console.log('✅ Full database setup completed!');
     } else {
+      // Add missing columns if they don't exist
+      try {
+        await pool.query('ALTER TABLE articles ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0');
+        console.log('✅ Added view_count column if missing');
+      } catch (error) {
+        console.log('⚠️  Could not add view_count column:', error.message);
+      }
+      
       console.log(`✅ Database tables exist with ${articleCount} articles`);
     }
   } catch (error) {
