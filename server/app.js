@@ -12,6 +12,43 @@ import profileRouter from './routes/profile/profile-main.js';
 
 dotenv.config();
 
+// Database initialization function
+async function initializeDatabase() {
+  try {
+    const { pool } = await import('./utils/database.js');
+    
+    // Check if articles table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'articles'
+      );
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      console.log('🔄 Articles table not found. Running database setup...');
+      
+      // Import and run setup functions
+      const { setupTables } = await import('./setup-tables.js');
+      const { setupCategories } = await import('./setup-categories.js');
+      const { setupAdmin } = await import('./setup-admin.js');
+      const { setupSampleArticles } = await import('./setup-sample-articles.js');
+      
+      await setupTables();
+      await setupCategories();
+      await setupAdmin();
+      await setupSampleArticles();
+      
+      console.log('✅ Database setup completed!');
+    } else {
+      console.log('✅ Database tables already exist');
+    }
+  } catch (error) {
+    console.error('❌ Database initialization error:', error);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -134,10 +171,13 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🔐 Auth endpoints:`);
   console.log(`   POST http://localhost:${PORT}/api/auth/register`);
   console.log(`   POST http://localhost:${PORT}/api/auth/login`);
+  
+  // Initialize database on server start
+  await initializeDatabase();
 });

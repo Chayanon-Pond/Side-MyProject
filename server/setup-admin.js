@@ -54,13 +54,17 @@ async function createAdminUser() {
     console.log(`   Password: ppond333`);
     
     console.log('\n✅ Admin setup completed successfully!');
-    process.exit(0);
 
   } catch (error) {
     console.error('❌ Error setting up admin user:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
-// Run the setup
-createAdminUser();
+// Export the function
+export { createAdminUser as setupAdmin };
+
+// Run if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  createAdminUser().finally(() => process.exit(0));
+}

@@ -62,13 +62,17 @@ async function createCategoriesTable() {
     });
     
     console.log('\n✅ Categories setup completed successfully!');
-    process.exit(0);
 
   } catch (error) {
     console.error('❌ Error setting up categories:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
-// Run the setup
-createCategoriesTable();
+// Export the function
+export { createCategoriesTable as setupCategories };
+
+// Run if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  createCategoriesTable().finally(() => process.exit(0));
+}

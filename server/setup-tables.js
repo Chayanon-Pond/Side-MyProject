@@ -19,9 +19,14 @@ const setupTables = async () => {
     
   } catch (error) {
     console.error('❌ Error setting up tables:', error);
-  } finally {
-    await connectionPool.end();
+    throw error;
   }
 };
 
-setupTables();
+// Export the function
+export { setupTables };
+
+// Run if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  setupTables().finally(() => connectionPool.end());
+}

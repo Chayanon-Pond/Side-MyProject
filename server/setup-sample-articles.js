@@ -130,13 +130,17 @@ async function createSampleArticles() {
     });
     
     console.log('\n✅ Sample articles setup completed successfully!');
-    process.exit(0);
 
   } catch (error) {
     console.error('❌ Error setting up sample articles:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
-// Run the setup
-createSampleArticles();
+// Export the function
+export { createSampleArticles as setupSampleArticles };
+
+// Run if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  createSampleArticles().finally(() => process.exit(0));
+}
