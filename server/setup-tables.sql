@@ -63,6 +63,21 @@ CREATE TABLE IF NOT EXISTS article_tags (
     CONSTRAINT unique_article_tag UNIQUE (article_id, tag_id)
 );
 
+-- Create comments table if not exists
+CREATE TABLE IF NOT EXISTS comments (
+    id SERIAL PRIMARY KEY,
+    article_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    parent_id INTEGER NULL,
+    content TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_comments_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_comments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_comments_parent FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_articles_slug ON articles(slug);
 CREATE INDEX IF NOT EXISTS idx_articles_status ON articles(status);
@@ -72,6 +87,10 @@ CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at);
 CREATE INDEX IF NOT EXISTS idx_tags_slug ON tags(slug);
 CREATE INDEX IF NOT EXISTS idx_article_tags_article_id ON article_tags(article_id);
 CREATE INDEX IF NOT EXISTS idx_article_tags_tag_id ON article_tags(tag_id);
+CREATE INDEX IF NOT EXISTS idx_comments_article_id ON comments(article_id);
+CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments(user_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON comments(parent_id);
+CREATE INDEX IF NOT EXISTS idx_comments_status ON comments(status);
 
 -- Update trigger for articles updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()

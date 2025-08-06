@@ -18,6 +18,7 @@ const setupTables = async () => {
     console.log('- articles');
     console.log('- tags');
     console.log('- article_tags');
+    console.log('- comments');
     
   } catch (error) {
     console.error('❌ Error setting up tables:', error);

@@ -59,8 +59,26 @@ async function initializeDatabase() {
       try {
         await pool.query('ALTER TABLE articles ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0');
         console.log('✅ Added view_count column if missing');
+        
+        // Create comments table if not exists
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS comments (
+            id SERIAL PRIMARY KEY,
+            article_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            parent_id INTEGER NULL,
+            content TEXT NOT NULL,
+            status VARCHAR(20) DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected')),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_comments_article FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+            CONSTRAINT fk_comments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            CONSTRAINT fk_comments_parent FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+          )
+        `);
+        console.log('✅ Added comments table if missing');
       } catch (error) {
-        console.log('⚠️  Could not add view_count column:', error.message);
+        console.log('⚠️  Could not add missing tables/columns:', error.message);
       }
       
       console.log(`✅ Database tables exist with ${articleCount} articles`);
