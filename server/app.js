@@ -18,7 +18,7 @@ async function initializeDatabase() {
     console.log('🔄 Checking database status...');
     const { pool } = await import('./utils/database.js');
     
-    // Check if articles table exists
+    // Check if articles table exists and has data
     const tableCheck = await pool.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -27,8 +27,11 @@ async function initializeDatabase() {
       );
     `);
     
-    if (!tableCheck.rows[0].exists) {
-      console.log('🔄 Articles table not found. Running database setup...');
+    const dataCheck = await pool.query('SELECT COUNT(*) as count FROM articles');
+    const articleCount = parseInt(dataCheck.rows[0].count);
+    
+    if (!tableCheck.rows[0].exists || articleCount === 0) {
+      console.log('🔄 Database setup needed. Running database initialization...');
       
       // Import and run setup functions in sequence
       const { setupTables } = await import('./setup-tables.js');
@@ -52,7 +55,7 @@ async function initializeDatabase() {
       
       console.log('✅ Full database setup completed!');
     } else {
-      console.log('✅ Database tables already exist');
+      console.log(`✅ Database tables exist with ${articleCount} articles`);
     }
   } catch (error) {
     console.error('❌ Database initialization error:', error.message);
