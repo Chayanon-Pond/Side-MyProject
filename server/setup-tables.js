@@ -13,6 +13,8 @@ const setupTables = async () => {
     
     console.log('✅ Database tables created successfully!');
     console.log('Tables created:');
+    console.log('- users');
+    console.log('- categories');
     console.log('- articles');
     console.log('- tags');
     console.log('- article_tags');
