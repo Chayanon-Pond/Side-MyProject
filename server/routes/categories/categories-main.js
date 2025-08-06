@@ -26,7 +26,7 @@ router.post('/', authenticateToken, async (req, res) => {
     // Check if user is admin
     const userCheck = await connectionPool.query(
       'SELECT role FROM users WHERE id = $1',
-      [req.user.userId]
+      [req.user.id]
     );
     
     if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'admin') {
