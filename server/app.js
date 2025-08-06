@@ -30,21 +30,23 @@ async function initializeDatabase() {
     if (!tableCheck.rows[0].exists) {
       console.log('🔄 Articles table not found. Running database setup...');
       
-      // Import and run setup functions
+      // Import and run setup functions in sequence
       const { setupTables } = await import('./setup-tables.js');
-      const { setupCategories } = await import('./setup-categories.js');
-      const { setupAdmin } = await import('./setup-admin.js');
-      const { setupSampleArticles } = await import('./setup-sample-articles.js');
-      
       await setupTables();
       console.log('✅ Tables setup completed');
       
+      // Wait a bit to ensure tables are fully created
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const { setupCategories } = await import('./setup-categories.js');
       await setupCategories();
       console.log('✅ Categories setup completed');
       
+      const { setupAdmin } = await import('./setup-admin.js');
       await setupAdmin();
       console.log('✅ Admin setup completed');
       
+      const { setupSampleArticles } = await import('./setup-sample-articles.js');
       await setupSampleArticles();
       console.log('✅ Sample articles setup completed');
       

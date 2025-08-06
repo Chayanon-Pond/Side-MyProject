@@ -5,6 +5,20 @@ async function createAdminUser() {
   try {
     console.log('🚀 Setting up admin user...');
 
+    // Check if users table exists
+    const tableExists = await connectionPool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      );
+    `);
+
+    if (!tableExists.rows[0].exists) {
+      console.log('❌ Users table does not exist. Please run setup-tables.js first');
+      throw new Error('Users table does not exist');
+    }
+
     // Add role column if it doesn't exist
     await connectionPool.query(`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user'
