@@ -257,7 +257,7 @@ function CardDetal() {
           <div className="mb-8">
             <img
               className="w-full h-96 object-cover rounded-lg"
-              src={article.featured_image_url}
+              src={`${API_URL}${article.featured_image_url}`}
               alt={article.featured_image_alt || article.title}
               onError={(e) => {
                 e.target.src = "./public/img/mc_homepage.jpg";
@@ -322,7 +322,7 @@ function CardDetal() {
                   <img
                     className="w-full h-48 object-cover"
                     src={
-                      related.featured_image_url ||
+                      related.featured_image_url ? `${API_URL}${related.featured_image_url}` :
                       "./public/img/mc_homepage.jpg"
                     }
                     alt={related.title}

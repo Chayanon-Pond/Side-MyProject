@@ -88,7 +88,7 @@ function BlogGrid() {
           <BlogCard
             key={article.id}
             articleId={article.id}
-            pic={article.featured_image_url || "./public/img/mc_homepage.jpg"} // fallback image
+            pic={article.featured_image_url ? `${API_URL}${article.featured_image_url}` : "./public/img/mc_homepage.jpg"} // fallback image
             title={article.title}
             description={article.excerpt || article.content?.substring(0, 200) + "..."}
             date={formatDate(article.published_at || article.created_at)}
