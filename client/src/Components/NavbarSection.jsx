@@ -7,10 +7,12 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     setIsDropdownOpen(false);
+    setIsMobileMenuOpen(false);
     navigate("/");
   };
 
@@ -22,36 +24,47 @@ const Navbar = () => {
     setIsDropdownOpen(false);
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <nav className="md:flex md:justify-between md:mx-auto shadow-sm flex justify-between bg-[#1c1c1c] md:items-center w-full sticky top-0">
-      <div className="md:ml-1 ml-1 h-28">
-        <Link to="/">
-          <img
-            className="h-28"
-            src="/logo/Porsche_car_logo.png"
-            alt="logo"
-          />
-        </Link>
-      </div>
-      
-      <div className="hidden md:flex gap-4">
-        <div className="mx-auto md:pl-120 mr-20 mt-3">
-          <ul className="flex flex-col md:flex-row md:gap-10 gap-2">
-            <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">
-              Home
-            </li>
-            <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">
-              About
-            </li>
-            <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">
-              contact
-            </li>
-            <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">
-              Help
-            </li>
-          </ul>
+    <>
+      <nav className="md:flex md:justify-between md:mx-auto shadow-sm flex justify-between bg-[#1c1c1c] md:items-center w-full sticky top-0 z-50">
+        <div className="md:ml-1 ml-1 h-28">
+          <Link to="/">
+            <img
+              className="h-28"
+              src="/logo/Porsche_car_logo.png"
+              alt="logo"
+            />
+          </Link>
         </div>
         
+        {/* Desktop Menu */}
+        <div className="hidden md:flex gap-4">
+          <div className="mx-auto md:pl-120 mr-20 mt-3">
+            <ul className="flex flex-col md:flex-row md:gap-10 gap-2">
+              <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">
+                <Link to="/" className="block">Home</Link>
+              </li>
+              <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">
+                About
+              </li>
+              <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">
+                Contact
+              </li>
+              <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">
+                Help
+              </li>
+            </ul>
+          </div>
+        
+        {/* Desktop Auth Buttons */}
         {user ? (
           <div className="flex items-center space-x-4">
             {/* Notification Bell */}
@@ -187,18 +200,146 @@ const Navbar = () => {
         )}
       </div>
       
+      {/* Mobile Hamburger Button */}
       <div className="flex md:hidden items-center justify-center">
         <button
-          className="md:mr-10 mr-10"
-          data-collapse-toggle="navbar-hamburger"
+          onClick={toggleMobileMenu}
+          className="md:mr-10 mr-10 p-2 text-white hover:bg-gray-700 rounded-lg transition-colors"
           type="button"
+          aria-label="Toggle mobile menu"
         >
-          <img src="/logo/hamberger.svg" alt="hamburger menu" />
+          <svg 
+            className={`w-6 h-6 transition-transform ${isMobileMenuOpen ? 'rotate-90' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            {isMobileMenuOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            )}
+          </svg>
         </button>
       </div>
-      
-      <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
     </nav>
+
+    {/* Mobile Menu Overlay */}
+    {isMobileMenuOpen && (
+      <>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={closeMobileMenu}></div>
+        <div className="md:hidden fixed top-28 left-0 right-0 bg-[#1c1c1c] border-t border-gray-600 z-50 shadow-lg">
+          <div className="px-4 py-6 space-y-4">
+            {/* Mobile Navigation Links */}
+            <div className="space-y-3">
+              <Link 
+                to="/" 
+                className="block text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+                onClick={closeMobileMenu}
+              >
+                Home
+              </Link>
+              <button className="block w-full text-left text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
+                About
+              </button>
+              <button className="block w-full text-left text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
+                Contact
+              </button>
+              <button className="block w-full text-left text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
+                Help
+              </button>
+            </div>
+
+            <hr className="border-gray-600" />
+
+            {/* Mobile Auth Section */}
+            {user ? (
+              <div className="space-y-3">
+                {/* Mobile User Info */}
+                <div className="flex items-center space-x-3 py-2 px-4">
+                  <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center overflow-hidden">
+                    <img
+                      src="https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"
+                      alt={user.full_name || user.fullName || user.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="text-white">
+                    <p className="font-medium">{user.full_name || user.fullName || user.name}</p>
+                    <p className="text-sm text-gray-300">{user.email}</p>
+                  </div>
+                </div>
+
+                {/* Mobile Notification */}
+                <div className="px-4">
+                  <NotificationDropdown />
+                </div>
+
+                {/* Mobile User Menu */}
+                <button
+                  onClick={() => {
+                    closeMobileMenu();
+                    navigate("/profile");
+                  }}
+                  className="block w-full text-left text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Profile
+                </button>
+
+                <button
+                  onClick={() => {
+                    closeMobileMenu();
+                    navigate("/reset-password");
+                  }}
+                  className="block w-full text-left text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Reset Password
+                </button>
+
+                {(user.role === "admin" || user.is_admin) && (
+                  <button
+                    onClick={() => {
+                      closeMobileMenu();
+                      navigate("/admin");
+                    }}
+                    className="block w-full text-left text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    Admin Panel
+                  </button>
+                )}
+
+                <hr className="border-gray-600" />
+
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left text-red-400 hover:text-red-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Log out
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Link 
+                  to="/login"
+                  className="block w-full text-center bg-white text-black py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  onClick={closeMobileMenu}
+                >
+                  Log in
+                </Link>
+                <Link 
+                  to="/register"
+                  className="block w-full text-center border border-white text-white py-3 px-4 rounded-lg hover:bg-white hover:text-black transition-colors font-medium"
+                  onClick={closeMobileMenu}
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    )}
+  </>
   );
 };
 

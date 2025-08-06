@@ -1,6 +1,26 @@
+import React, { useState, useEffect } from "react";
 import ArticleSection from "./ArticleSection";
 import BlogGrid from "./ฺBlogGrid";
+
 const HerroSection = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [filteredArticles, setFilteredArticles] = useState([]);
+
+  // Handle search functionality
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    console.log('Search term:', term);
+    // This will be passed to BlogGrid to filter articles
+  };
+
+  // Handle category filter
+  const handleCategoryFilter = (categoryId) => {
+    setSelectedCategory(categoryId);
+    console.log('Selected category:', categoryId);
+    // This will be passed to BlogGrid to filter articles
+  };
+
   return (
     <div className="bg-white mb-150">
       <div className="flex flex-col md:flex-row items-center justify-center w-full px-10 py-16  md:grid grid-cols-3 gap-10 ">
@@ -42,11 +62,17 @@ const HerroSection = () => {
         </div>
       </div>
       <div className="container mx-auto">
-        <ArticleSection />
+        <ArticleSection 
+          onSearch={handleSearch}
+          onCategoryFilter={handleCategoryFilter}
+        />
       </div>
       <div>
         <div>
-          <BlogGrid />
+          <BlogGrid 
+            searchTerm={searchTerm}
+            selectedCategory={selectedCategory}
+          />
         </div>
       </div>
     </div>
