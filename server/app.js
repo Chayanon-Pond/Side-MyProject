@@ -15,6 +15,7 @@ dotenv.config();
 // Database initialization function
 async function initializeDatabase() {
   try {
+    console.log('🔄 Checking database status...');
     const { pool } = await import('./utils/database.js');
     
     // Check if articles table exists
@@ -36,16 +37,24 @@ async function initializeDatabase() {
       const { setupSampleArticles } = await import('./setup-sample-articles.js');
       
       await setupTables();
-      await setupCategories();
-      await setupAdmin();
-      await setupSampleArticles();
+      console.log('✅ Tables setup completed');
       
-      console.log('✅ Database setup completed!');
+      await setupCategories();
+      console.log('✅ Categories setup completed');
+      
+      await setupAdmin();
+      console.log('✅ Admin setup completed');
+      
+      await setupSampleArticles();
+      console.log('✅ Sample articles setup completed');
+      
+      console.log('✅ Full database setup completed!');
     } else {
       console.log('✅ Database tables already exist');
     }
   } catch (error) {
-    console.error('❌ Database initialization error:', error);
+    console.error('❌ Database initialization error:', error.message);
+    console.log('⚠️  Server will continue running, but some features may not work properly');
   }
 }
 
