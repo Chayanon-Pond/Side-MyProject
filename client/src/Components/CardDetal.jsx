@@ -49,11 +49,20 @@ function CardDetal() {
     try {
       setLoading(true);
       const response = await api.get(`/articles/${id}`);
-      setArticle(response.data.data);
-      setRelatedArticles(response.data.relatedArticles || []);
+      console.log('Article response:', response.data); // Debug log
+      
+      const articleData = response.data.data || response.data;
+      const relatedData = response.data.relatedArticles || [];
+      
+      setArticle(articleData);
+      setRelatedArticles(relatedData);
 
       // Increment view count
-      await api.post(`/articles/${id}/view`);
+      try {
+        await api.post(`/articles/${id}/view`);
+      } catch (viewError) {
+        console.warn('Failed to increment view count:', viewError);
+      }
     } catch (error) {
       console.error("Failed to fetch article:", error);
       setError("Failed to load article");
@@ -65,9 +74,11 @@ function CardDetal() {
   const fetchComments = async () => {
     try {
       const response = await api.get(`/comments/article/${id}`);
-      setComments(response.data.comments || []);
+      console.log('Comments response:', response.data); // Debug log
+      setComments(response.data.comments || response.data || []);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
+      setComments([]); // Set empty array on error
     }
   };
 
@@ -253,12 +264,12 @@ function CardDetal() {
         <ArticleHeader article={article} formatDate={formatDate} />
 
         {/* Featured Image */}
-        {article.featured_image_url && (
+        {article?.featured_image_url && (
           <div className="mb-8">
             <img
               className="w-full h-96 object-cover rounded-lg"
               src={`${API_URL}${article.featured_image_url}`}
-              alt={article.featured_image_alt || article.title}
+              alt={article.featured_image_alt || article.title || 'Article image'}
               onError={(e) => {
                 e.target.src = "./public/img/mc_homepage.jpg";
               }}
@@ -270,7 +281,7 @@ function CardDetal() {
         <div className="prose prose-lg max-w-none mb-12">
           <div
             className="text-gray-800 leading-relaxed whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            dangerouslySetInnerHTML={{ __html: article?.content || '' }}
           />
         </div>
 
@@ -280,7 +291,7 @@ function CardDetal() {
         {/* Comments Section */}
         <section className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Comments ({comments.length})
+            Comments ({comments?.length || 0})
           </h2>
 
           {/* Comment Form */}
@@ -307,7 +318,7 @@ function CardDetal() {
         </section>
 
         {/* Related Articles */}
-        {relatedArticles.length > 0 && (
+        {relatedArticles?.length > 0 && (
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               Related Articles

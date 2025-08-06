@@ -322,7 +322,7 @@ const CreateArticle = () => {
           <button
             onClick={handleSaveDraft}
             disabled={loading}
-            className="px-6 py-2 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 border border-gray-300 rounded-full hover:bg-blue-500 bg-blue-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Saving..." : "Save as draft"}
           </button>
