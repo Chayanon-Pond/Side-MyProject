@@ -27,7 +27,7 @@ export const updateArticle = async (req, res) => {
   tags
 } = req.body;
       
-      const author_id = req.user.userId;
+      const author_id = req.user.id;
       
       // Check if article exists and belongs to user (or user is admin)
       const checkResult = await connectionPool.query(

@@ -141,7 +141,7 @@ authRouter.put("/profile", authenticateToken, (req, res) => {
 
     try {
       const { full_name, username, email, bio } = req.body;
-      const userId = req.user.userId;
+      const userId = req.user.id;
 
       // Validation
       if (!full_name || !username || !email) {
@@ -237,7 +237,7 @@ authRouter.put("/profile", authenticateToken, (req, res) => {
 authRouter.put("/reset-password", authenticateToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     // Validation
     if (!currentPassword || !newPassword) {

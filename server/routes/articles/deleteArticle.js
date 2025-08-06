@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 export const deleteArticle = async (req, res) => {
   try {
     const { id } = req.params;
-    const author_id = req.user.userId;
+    const author_id = req.user.id;
     
     // Begin transaction
     await connectionPool.query('BEGIN');
@@ -109,7 +109,7 @@ export const deleteArticle = async (req, res) => {
 export const bulkDeleteArticles = async (req, res) => {
   try {
     const { ids } = req.body; // Array of article IDs
-    const user_id = req.user.userId;
+    const user_id = req.user.id;
     
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ error: 'Invalid article IDs' });
@@ -184,7 +184,7 @@ export const bulkDeleteArticles = async (req, res) => {
 export const archiveArticle = async (req, res) => {
   try {
     const { id } = req.params;
-    const author_id = req.user.userId;
+    const author_id = req.user.id;
     
     // Check ownership
     const checkResult = await connectionPool.query(

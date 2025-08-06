@@ -5,7 +5,7 @@ import path from 'path';
 export const deleteArticle = async (req, res) => {
   try {
     const { id } = req.params;
-    const user_id = req.user.userId;
+    const user_id = req.user.id;
     
     // Check if article exists and get details
     const articleCheck = await connectionPool.query(

@@ -158,7 +158,7 @@ export const getArticleById = async (req, res) => {
     
     // Check if article is published or user is the author
     if (article.status !== 'published' && 
-        (!req.user || req.user.userId !== article.author_id)) {
+        (!req.user || req.user.id !== article.author_id)) {
       return res.status(404).json({ error: 'Article not found' });
     }
     
