@@ -35,9 +35,25 @@ const Notification = () => {
     try {
       setLoading(true);
       const response = await api.get(`/notifications?filter=${filter}`);
-      setNotifications(response.data.data || response.data || []);
+      console.log('Notifications response:', response.data); // Debug log
+      
+      // Handle different response structures
+      let notificationsData = [];
+      if (response.data.notifications) {
+        notificationsData = response.data.notifications;
+      } else if (response.data.data) {
+        notificationsData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        notificationsData = response.data;
+      } else {
+        notificationsData = [];
+      }
+      
+      // Ensure it's an array
+      setNotifications(Array.isArray(notificationsData) ? notificationsData : []);
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
+      setNotifications([]); // Set empty array on error
       toast.error("Failed to load notifications");
     } finally {
       setLoading(false);
@@ -198,7 +214,7 @@ const Notification = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-semibold text-gray-800">Notification</h1>
-        {notifications.some((n) => !n.is_read) && (
+        {Array.isArray(notifications) && notifications.some((n) => !n.is_read) && (
           <button
             onClick={markAllAsRead}
             className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
@@ -244,7 +260,7 @@ const Notification = () => {
 
       {/* Notifications List */}
       <div className="bg-white rounded-lg shadow-sm">
-        {notifications.length === 0 ? (
+        {(!Array.isArray(notifications) || notifications.length === 0) ? (
           <div className="p-8 text-center text-gray-500 ">
             <svg
               className="w-12 h-12 mx-auto mb-4 text-gray-300 "
@@ -263,7 +279,7 @@ const Notification = () => {
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {notifications.map((notification) => (
+            {Array.isArray(notifications) && notifications.map((notification) => (
               <div
                 key={notification.id}
                 className={`p-6 hover:bg-gray-50 transition-colors cursor-pointer ${
