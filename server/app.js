@@ -94,22 +94,6 @@ async function initializeDatabase() {
           )
         `);
         console.log('✅ Added notifications table if missing');
-        
-        // Create notifications table if not exists
-        await pool.query(`
-          CREATE TABLE IF NOT EXISTS notifications (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL,
-            title VARCHAR(255) NOT NULL,
-            message TEXT NOT NULL,
-            type VARCHAR(50) DEFAULT 'info' CHECK (type IN ('info', 'success', 'warning', 'error')),
-            is_read BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-          )
-        `);
-        console.log('✅ Added notifications table if missing');
       } catch (error) {
         console.log('⚠️  Could not add missing tables/columns:', error.message);
       }

@@ -17,8 +17,7 @@ export const getNotifications = async (req, res) => {
         n.created_at,
         n.updated_at,
         u.full_name as sender_name,
-        u.profile_image as sender_avatar,
-        n.link
+        u.profile_image_url as sender_avatar
       FROM notifications n
       LEFT JOIN users u ON (n.data::json->>'sender_id')::int = u.id
       WHERE n.user_id = $1
