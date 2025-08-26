@@ -115,15 +115,15 @@ export const getAllArticles = async (req, res) => {
       countQuery += ` AND (a.title ILIKE $${countParamCount} OR a.content ILIKE $${countParamCount})`;
       countParams.push(`%${search}%`);
     }
-    if (category_id) {
+    if (Number.isInteger(categoryId) && categoryId > 0) {
       countParamCount++;
-      countQuery += ` AND a.category_id = $${countParamCount}`;
-      countParams.push(category_id);
+      countQuery += ` AND a.category_id = $${countParamCount}::int`;
+      countParams.push(categoryId);
     }
-    if (author_id) {
+    if (Number.isInteger(authorId) && authorId > 0) {
       countParamCount++;
-      countQuery += ` AND a.author_id = $${countParamCount}`;
-      countParams.push(author_id);
+      countQuery += ` AND a.author_id = $${countParamCount}::int`;
+      countParams.push(authorId);
     }
 
     const countResult = await Promise.race([
@@ -147,6 +147,7 @@ export const getAllArticles = async (req, res) => {
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     console.error('Query params:', req.query);
+  console.error('Sanitized params:', { limitNum, offsetNum, sortKey, statusFilter, categoryId, authorId });
     console.error('========================');
     res.status(500).json({
       error: 'Failed to fetch articles',
