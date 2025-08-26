@@ -230,14 +230,28 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Start server
-app.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🔐 Auth endpoints:`);
-  console.log(`   POST http://localhost:${PORT}/api/auth/register`);
-  console.log(`   POST http://localhost:${PORT}/api/auth/login`);
-  
-  // Initialize database on server start
-  await initializeDatabase();
-});
+// Initialize database and start server
+async function startServer() {
+  try {
+    // Start server first
+    const server = app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`🔐 Auth endpoints:`);
+      console.log(`   POST http://localhost:${PORT}/api/auth/register`);
+      console.log(`   POST http://localhost:${PORT}/api/auth/login`);
+    });
+
+    // Then initialize database
+    await initializeDatabase();
+    console.log('✅ Database initialization completed');
+    
+    return server;
+  } catch (error) {
+    console.error('❌ Server startup failed:', error.message);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
