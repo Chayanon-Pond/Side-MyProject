@@ -89,8 +89,13 @@ export const getAllArticles = async (req, res) => {
     query += ` OFFSET $${paramCount}`;
     params.push(offset);
 
-    // Execute main query
-    const result = await connectionPool.query(query, params);
+    // Execute main query with timeout
+    const result = await Promise.race([
+      connectionPool.query(query, params),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), 30000)
+      )
+    ]);
     
     // Get total count for pagination
     let countQuery = `
@@ -126,7 +131,12 @@ export const getAllArticles = async (req, res) => {
       countParams.push(author_id);
     }
     
-    const countResult = await connectionPool.query(countQuery, countParams);
+    const countResult = await Promise.race([
+      connectionPool.query(countQuery, countParams),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Count query timeout')), 30000)
+      )
+    ]);
     const total = parseInt(countResult.rows[0].total);
     
     res.json({

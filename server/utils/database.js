@@ -10,7 +10,9 @@ const connectionPool = new Pool({
   // Connection pool settings
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000, // Increased timeout
+  acquireTimeoutMillis: 60000,    // Added acquire timeout
+  createTimeoutMillis: 30000,     // Added create timeout
 });
 
 // Test connection
