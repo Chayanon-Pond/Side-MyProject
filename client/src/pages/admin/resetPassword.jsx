@@ -22,7 +22,7 @@ const ResetPassword = () => {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: `${API_URL}/api`,
+    baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
     headers: {
       Authorization: `Bearer ${token}`,
     },

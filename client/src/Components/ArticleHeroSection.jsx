@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Resolve API base URL robustly for dev and prod (same logic as BlogGrid)
+const resolveApiUrl = () => {
+  const envUrl = (import.meta.env.VITE_API_URL ?? '').trim();
+  if (/^https?:\/\//i.test(envUrl)) return envUrl.replace(/\/$/, '');
+
+  const origin = window.location.origin;
+  if (origin.includes('localhost:5173') || origin.includes('127.0.0.1:5173')) {
+    return 'http://localhost:3001';
+  }
+
+  return origin;
+};
+
+const API_URL = resolveApiUrl();
 
 const ArticleHeroSection = () => {
   const [articles, setArticles] = useState([]);
@@ -10,8 +23,12 @@ const ArticleHeroSection = () => {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: `${API_URL}/api`,
+    baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
   });
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.debug('[ArticleHeroSection] API base:', api.defaults.baseURL);
+  }
 
   useEffect(() => {
     fetchArticles();
@@ -125,9 +142,9 @@ const ArticleCard = ({ article }) => {
       {/* Article Image */}
       <div className="relative h-48 overflow-hidden">
         <img
-          src={article.featured_image_url ? 
-            `${API_URL}${article.featured_image_url}` : 
-            '/img/mc_homepage.jpg'
+          src={article.featured_image_url 
+            ? (import.meta.env.DEV ? `${article.featured_image_url}` : `${API_URL}${article.featured_image_url}`)
+            : '/img/mc_homepage.jpg'
           }
           alt={article.featured_image_alt || article.title}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"

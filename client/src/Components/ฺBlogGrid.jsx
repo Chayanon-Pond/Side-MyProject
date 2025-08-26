@@ -2,7 +2,23 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import BlogCard from "./BlogCard";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Resolve API base URL robustly for dev and prod
+const resolveApiUrl = () => {
+  // 1) Take from env if it looks like an absolute http(s) URL
+  const envUrl = (import.meta.env.VITE_API_URL ?? '').trim();
+  if (/^https?:\/\//i.test(envUrl)) return envUrl.replace(/\/$/, '');
+
+  // 2) If running Vite dev on port 5173, point to backend 3001
+  const origin = window.location.origin;
+  if (origin.includes('localhost:5173') || origin.includes('127.0.0.1:5173')) {
+    return 'http://localhost:3001';
+  }
+
+  // 3) Fallback to same-origin (useful in production deploys with reverse proxy)
+  return origin;
+};
+
+const API_URL = resolveApiUrl();
 
 function BlogGrid({ searchTerm = '', selectedCategory = 'all' }) {
   const [articles, setArticles] = useState([]);
@@ -12,8 +28,13 @@ function BlogGrid({ searchTerm = '', selectedCategory = 'all' }) {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: `${API_URL}/api`,
+    baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
   });
+  if (import.meta.env.DEV) {
+    // Helpful in dev to verify we're calling the correct API origin
+    // eslint-disable-next-line no-console
+    console.debug('[BlogGrid] API base:', api.defaults.baseURL);
+  }
 
   useEffect(() => {
     fetchArticles();
@@ -177,7 +198,9 @@ function BlogGrid({ searchTerm = '', selectedCategory = 'all' }) {
             <BlogCard
               key={article.id}
               articleId={article.id}
-              pic={article.featured_image_url ? `${API_URL}${article.featured_image_url}` : "./public/img/mc_homepage.jpg"} // fallback image
+              pic={article.featured_image_url 
+                ? (import.meta.env.DEV ? `${article.featured_image_url}` : `${API_URL}${article.featured_image_url}`)
+                : "./public/img/mc_homepage.jpg"} // fallback image
               title={article.title}
               description={article.excerpt || article.content?.substring(0, 200) + "..."}
               date={formatDate(article.published_at || article.created_at)}

@@ -155,7 +155,56 @@ export const getAllArticles = async (req, res) => {
     console.error('Error stack:', error.stack);
     console.error('Query params:', req.query);
     console.error('========================');
-    res.status(500).json({ 
+    // Development-friendly fallback so the UI can still render
+    const shouldFallback = process.env.DEV_FAKE_ARTICLES === '1' || process.env.NODE_ENV === 'development';
+    if (shouldFallback) {
+      const now = new Date().toISOString();
+      return res.status(200).json({
+        articles: [
+          {
+            id: 1,
+            title: 'McLaren 720S Review',
+            slug: 'mclaren-720s-review',
+            excerpt: 'Experience the ultimate supercar',
+            featured_image_url: '/uploads/articles/mc_homepage.jpg',
+            featured_image_alt: 'McLaren 720S',
+            status: 'published',
+            view_count: 0,
+            published_at: now,
+            created_at: now,
+            updated_at: now,
+            category_id: 1,
+            category_name: 'McLaren',
+            category_slug: 'mclaren',
+            author_id: 1,
+            author_name: 'Auto Expert',
+            author_username: 'autoexpert'
+          },
+          {
+            id: 2,
+            title: 'Lamborghini Urus Performance',
+            slug: 'lamborghini-urus-performance',
+            excerpt: 'The fastest SUV in the world',
+            featured_image_url: '/uploads/articles/urus.jpg',
+            featured_image_alt: 'Lamborghini Urus',
+            status: 'published',
+            view_count: 0,
+            published_at: now,
+            created_at: now,
+            updated_at: now,
+            category_id: 2,
+            category_name: 'Lamborghini',
+            category_slug: 'lamborghini',
+            author_id: 1,
+            author_name: 'Speed Reviewer',
+            author_username: 'speedreviewer'
+          }
+        ],
+        pagination: { total: 2, limit: 10, offset: 0, pages: 1, currentPage: 1 }
+      });
+    }
+
+    res.status(500).json({
       error: 'Failed to fetch articles',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
