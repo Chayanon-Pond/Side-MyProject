@@ -13,8 +13,16 @@ const needSSL = (
   (isProduction && process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost'))
 );
 
+// Resolve connection string from common envs (Railway/Neon/Supabase)
+const connectionString = (
+  process.env.DATABASE_URL ||
+  process.env.RAILWAY_DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  undefined
+);
+
 const poolConfig = {
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   // Connection pool settings
   max: parseInt(process.env.PG_POOL_MAX || '20', 10),
   idleTimeoutMillis: parseInt(process.env.PG_IDLE_TIMEOUT || '30000', 10),
@@ -47,3 +55,19 @@ connectionPool.on('error', (err) => {
 
 export default connectionPool;
 export { connectionPool as pool };
+
+// Helper to expose safe DB target info (no secrets)
+export function getDbTarget() {
+  try {
+    const url = poolConfig.connectionString ? new URL(poolConfig.connectionString) : null;
+    return url ? {
+      host: url.hostname,
+      port: url.port || '5432',
+      database: url.pathname?.replace('/', ''),
+      ssl: !!poolConfig.ssl,
+      provider: isProduction ? 'production' : 'development'
+    } : null;
+  } catch {
+    return null;
+  }
+}

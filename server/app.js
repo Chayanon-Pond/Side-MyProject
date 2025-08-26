@@ -158,13 +158,14 @@ app.use('/api/profile', profileRouter);
 app.get('/api/health', async (req, res) => {
   try {
     // Test database connection
-    const { pool } = await import('./utils/database.js');
+    const { pool, getDbTarget } = await import('./utils/database.js');
     const testQuery = await pool.query('SELECT 1 as test');
     
     res.json({ 
       status: 'OK', 
       message: 'Server is running',
       database: testQuery.rows[0] ? 'Connected' : 'Disconnected',
+      dbTarget: getDbTarget?.(),
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -172,6 +173,7 @@ app.get('/api/health', async (req, res) => {
       status: 'ERROR', 
       message: 'Database connection failed',
       error: error.message,
+      dbTarget: (await import('./utils/database.js')).getDbTarget?.(),
       timestamp: new Date().toISOString()
     });
   }
@@ -180,19 +182,21 @@ app.get('/api/health', async (req, res) => {
 // Debug endpoint to check articles data
 app.get('/api/debug/articles', async (req, res) => {
   try {
-    const { pool } = await import('./utils/database.js');
+    const { pool, getDbTarget } = await import('./utils/database.js');
     const result = await pool.query('SELECT COUNT(*) as total FROM articles');
     const sampleData = await pool.query('SELECT id, title, status FROM articles LIMIT 3');
     
     res.json({
       total_articles: result.rows[0]?.total || 0,
       sample_data: sampleData.rows,
+      dbTarget: getDbTarget?.(),
       timestamp: new Date().toISOString()
     });
   } catch (error) {
     res.status(500).json({ 
       error: 'Debug failed',
       message: error.message,
+      dbTarget: (await import('./utils/database.js')).getDbTarget?.(),
       timestamp: new Date().toISOString()
     });
   }
