@@ -3,16 +3,22 @@ import connectionPool from '../../utils/database.js';
 // Get all articles with filters
 export const getAllArticles = async (req, res) => {
   try {
-    const { 
-      search, 
-      status = 'published', 
-      category_id, 
+    const {
+      search,
+      status = 'published',
+      category_id,
       author_id,
-      limit = 10, 
+      limit = 10,
       offset = 0,
-      sort = 'newest' 
+      sort = 'newest',
     } = req.query;
-    
+
+    // Normalize inputs
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 10, 1), 100);
+    const offsetNum = Math.max(parseInt(offset, 10) || 0, 0);
+    const sortKey = ['newest', 'oldest', 'popular', 'title'].includes(String(sort)) ? String(sort) : 'newest';
+    const statusFilter = ['published', 'draft', 'archived', 'all'].includes(String(status)) ? String(status) : 'published';
+
     let query = `
       SELECT 
         a.id,
@@ -37,15 +43,14 @@ export const getAllArticles = async (req, res) => {
       LEFT JOIN users u ON a.author_id = u.id
       WHERE 1=1
     `;
-    
+
     const params = [];
     let paramCount = 0;
 
-    // Add filters
-    if (status && status !== 'all') {
+    if (statusFilter && statusFilter !== 'all') {
       paramCount++;
       query += ` AND a.status = $${paramCount}`;
-      params.push(status);
+      params.push(statusFilter);
     }
 
     if (search) {
@@ -53,7 +58,7 @@ export const getAllArticles = async (req, res) => {
       query += ` AND (a.title ILIKE $${paramCount} OR a.content ILIKE $${paramCount})`;
       params.push(`%${search}%`);
     }
-    
+
     if (category_id) {
       paramCount++;
       query += ` AND a.category_id = $${paramCount}`;
@@ -65,9 +70,9 @@ export const getAllArticles = async (req, res) => {
       query += ` AND a.author_id = $${paramCount}`;
       params.push(author_id);
     }
-    
-    // Add sorting
-    switch (sort) {
+
+    // Sorting
+    switch (sortKey) {
       case 'oldest':
         query += ` ORDER BY a.created_at ASC`;
         break;
@@ -77,77 +82,65 @@ export const getAllArticles = async (req, res) => {
       case 'title':
         query += ` ORDER BY a.title ASC`;
         break;
-      default: // newest
+      default:
         query += ` ORDER BY a.created_at DESC`;
     }
-    
-    // Add pagination
-    paramCount++;
-    query += ` LIMIT $${paramCount}`;
-    params.push(limit);
-    paramCount++;
-    query += ` OFFSET $${paramCount}`;
-    params.push(offset);
 
-    // Execute main query with timeout
+    // Pagination
+    paramCount++;
+    query += ` LIMIT $${paramCount}::int`;
+    params.push(limitNum);
+    paramCount++;
+    query += ` OFFSET $${paramCount}::int`;
+    params.push(offsetNum);
+
+    // Execute
     const result = await Promise.race([
       connectionPool.query(query, params),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timeout')), 30000)
-      )
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 30000)),
     ]);
-    
-    // Get total count for pagination
-    let countQuery = `
-      SELECT COUNT(*) as total 
-      FROM articles a 
-      WHERE 1=1
-    `;
-    
+
+    // Count total for pagination
+    let countQuery = `SELECT COUNT(*) as total FROM articles a WHERE 1=1`;
     const countParams = [];
     let countParamCount = 0;
-    
-    if (status && status !== 'all') {
+
+    if (statusFilter && statusFilter !== 'all') {
       countParamCount++;
       countQuery += ` AND a.status = $${countParamCount}`;
-      countParams.push(status);
+      countParams.push(statusFilter);
     }
-    
     if (search) {
       countParamCount++;
       countQuery += ` AND (a.title ILIKE $${countParamCount} OR a.content ILIKE $${countParamCount})`;
       countParams.push(`%${search}%`);
     }
-    
     if (category_id) {
       countParamCount++;
       countQuery += ` AND a.category_id = $${countParamCount}`;
       countParams.push(category_id);
     }
-
     if (author_id) {
       countParamCount++;
       countQuery += ` AND a.author_id = $${countParamCount}`;
       countParams.push(author_id);
     }
-    
+
     const countResult = await Promise.race([
       connectionPool.query(countQuery, countParams),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Count query timeout')), 30000)
-      )
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Count query timeout')), 30000)),
     ]);
-    const total = parseInt(countResult.rows[0].total);
-    
+    const total = parseInt(countResult.rows[0].total, 10);
+
     res.json({
       articles: result.rows,
       pagination: {
         total,
-        limit: parseInt(limit),
-        offset: parseInt(offset),
-        pages: Math.ceil(total / limit),
-        currentPage: Math.floor(offset / limit) + 1
-      }
+        limit: limitNum,
+        offset: offsetNum,
+        pages: Math.ceil(total / limitNum),
+        currentPage: Math.floor(offsetNum / limitNum) + 1,
+      },
     });
   } catch (error) {
     console.error('=== GET ARTICLES ERROR ===');
@@ -155,58 +148,9 @@ export const getAllArticles = async (req, res) => {
     console.error('Error stack:', error.stack);
     console.error('Query params:', req.query);
     console.error('========================');
-    // Development-friendly fallback so the UI can still render
-    const shouldFallback = process.env.DEV_FAKE_ARTICLES === '1' || process.env.NODE_ENV === 'development';
-    if (shouldFallback) {
-      const now = new Date().toISOString();
-      return res.status(200).json({
-        articles: [
-          {
-            id: 1,
-            title: 'McLaren 720S Review',
-            slug: 'mclaren-720s-review',
-            excerpt: 'Experience the ultimate supercar',
-            featured_image_url: '/uploads/articles/mc_homepage.jpg',
-            featured_image_alt: 'McLaren 720S',
-            status: 'published',
-            view_count: 0,
-            published_at: now,
-            created_at: now,
-            updated_at: now,
-            category_id: 1,
-            category_name: 'McLaren',
-            category_slug: 'mclaren',
-            author_id: 1,
-            author_name: 'Auto Expert',
-            author_username: 'autoexpert'
-          },
-          {
-            id: 2,
-            title: 'Lamborghini Urus Performance',
-            slug: 'lamborghini-urus-performance',
-            excerpt: 'The fastest SUV in the world',
-            featured_image_url: '/uploads/articles/urus.jpg',
-            featured_image_alt: 'Lamborghini Urus',
-            status: 'published',
-            view_count: 0,
-            published_at: now,
-            created_at: now,
-            updated_at: now,
-            category_id: 2,
-            category_name: 'Lamborghini',
-            category_slug: 'lamborghini',
-            author_id: 1,
-            author_name: 'Speed Reviewer',
-            author_username: 'speedreviewer'
-          }
-        ],
-        pagination: { total: 2, limit: 10, offset: 0, pages: 1, currentPage: 1 }
-      });
-    }
-
     res.status(500).json({
       error: 'Failed to fetch articles',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV !== 'production' ? error.message : undefined,
     });
   }
 };
