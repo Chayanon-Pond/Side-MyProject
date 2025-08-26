@@ -115,15 +115,19 @@ export const getAllArticles = async (req, res) => {
       countQuery += ` AND (a.title ILIKE $${countParamCount} OR a.content ILIKE $${countParamCount})`;
       countParams.push(`%${search}%`);
     }
-    if (Number.isInteger(categoryId) && categoryId > 0) {
+    // Normalize numeric ids for count query to mirror filters above
+    const categoryIdNum = category_id != null ? parseInt(category_id, 10) : null;
+    const authorIdNum = author_id != null ? parseInt(author_id, 10) : null;
+
+    if (Number.isInteger(categoryIdNum) && categoryIdNum > 0) {
       countParamCount++;
       countQuery += ` AND a.category_id = $${countParamCount}::int`;
-      countParams.push(categoryId);
+      countParams.push(categoryIdNum);
     }
-    if (Number.isInteger(authorId) && authorId > 0) {
+    if (Number.isInteger(authorIdNum) && authorIdNum > 0) {
       countParamCount++;
       countQuery += ` AND a.author_id = $${countParamCount}::int`;
-      countParams.push(authorId);
+      countParams.push(authorIdNum);
     }
 
     const countResult = await Promise.race([
