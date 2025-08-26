@@ -147,7 +147,6 @@ export const getAllArticles = async (req, res) => {
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     console.error('Query params:', req.query);
-  console.error('Sanitized params:', { limitNum, offsetNum, sortKey, statusFilter, categoryId, authorId });
     console.error('========================');
     res.status(500).json({
       error: 'Failed to fetch articles',
