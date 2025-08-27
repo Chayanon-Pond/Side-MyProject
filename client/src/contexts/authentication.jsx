@@ -1,7 +1,18 @@
 import React, { useState, useContext } from "react";
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Resolve API base URL robustly for dev (Vite proxy) and prod
+const resolveApiUrl = () => {
+  const envUrl = (import.meta.env.VITE_API_URL ?? '').trim();
+  if (/^https?:\/\//i.test(envUrl)) return envUrl.replace(/\/$/, '');
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  if (import.meta.env.DEV && (origin.includes('localhost:5173') || origin.includes('127.0.0.1:5173'))) {
+    return 'http://localhost:3001';
+  }
+  return origin || 'http://localhost:3001';
+};
+const API_URL = resolveApiUrl();
+const api = axios.create({ baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api` });
 const AuthenContext = React.createContext();
 
 export const useAuth = () => {
@@ -25,10 +36,7 @@ export const AuthProvider = ({ children }) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await axios.post(
-        `${API_URL}/api/auth/register`,
-        data
-      );
+  const response = await api.post('/auth/register', data);
 
       const { user, token } = response.data;
       localStorage.setItem("user", JSON.stringify(user));
@@ -84,13 +92,7 @@ export const AuthProvider = ({ children }) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await axios.post(
-        `${API_URL}/api/auth/login`,
-        {
-          email,
-          password,
-        }
-      );
+  const response = await api.post('/auth/login', { email, password });
 
       const { user, token } = response.data;
       localStorage.setItem("user", JSON.stringify(user));

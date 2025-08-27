@@ -1,6 +1,5 @@
 import React from "react";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { buildAssetUrl } from "../../utils/api";
 
 const ArticleTable = ({ articles, onEdit, onDelete }) => {
   const formatDate = (dateString) => {
@@ -60,9 +59,9 @@ const ArticleTable = ({ articles, onEdit, onDelete }) => {
             <tr key={article.id} className="hover:bg-gray-50">
               <td className="px-6 py-4">
                 <div className="flex items-center ">
-                  {article.featured_image_url && (
+          {article.featured_image_url && (
                     <img
-                      src={`${API_URL}${article.featured_image_url}`}
+            src={buildAssetUrl(article.featured_image_url)}
                       alt={article.featured_image_alt || article.title}
                       className="h-10 w-10 rounded object-cover mr-3"
                       onError={(e) => {

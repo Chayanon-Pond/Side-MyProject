@@ -2,9 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCustomToast } from "../../Components/ui/CustomToast";
 import { useAuth } from "../../contexts/authentication";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { api } from "../../utils/api";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -20,13 +18,8 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  // Create axios instance
-  const api = axios.create({
-    baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  // Authorization headers helper
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,10 +61,14 @@ const ResetPassword = () => {
     const loadingToast = toast.loading("Updating password...");
 
     try {
-      const response = await api.put("/auth/reset-password", {
-        currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword,
-      });
+      const response = await api.put(
+        "/auth/reset-password",
+        {
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+        },
+        { headers: authHeaders }
+      );
 
       toast.dismiss(loadingToast);
       toast.success("Password updated successfully!");

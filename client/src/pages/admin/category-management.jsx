@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/authentication";
 import { useCustomToast } from "../../Components/ui/CustomToast";
-import axios from "axios";
+import { api } from "../../utils/api";
 import { Plus, Search, Edit3, Trash2, X } from "lucide-react";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const CategoryManagement = () => {
   const { token } = useAuth();
@@ -19,13 +17,8 @@ const CategoryManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
 
-  // Create axios instance
-  const api = axios.create({
-    baseURL: `${API_URL}/api`,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  // Helper for auth headers per request
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
   // Fetch categories on mount
   useEffect(() => {
@@ -35,7 +28,7 @@ const CategoryManagement = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/categories");
+  const response = await api.get("/categories", { headers: authHeaders });
       // Handle different response structures
       const categoriesData = response.data?.data || response.data || [];
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
@@ -66,7 +59,7 @@ const CategoryManagement = () => {
 
     try {
       setLoading(true);
-      await api.post("/categories", newCategory);
+  await api.post("/categories", newCategory, { headers: authHeaders });
       toast.success("Category created successfully");
       setNewCategory({ name: "", description: "" });
       setShowModal(false);
@@ -92,10 +85,14 @@ const CategoryManagement = () => {
 
     try {
       setLoading(true);
-      await api.put(`/categories/${editingCategory.id}`, {
-        name: editingCategory.name,
-        description: editingCategory.description,
-      });
+      await api.put(
+        `/categories/${editingCategory.id}`,
+        {
+          name: editingCategory.name,
+          description: editingCategory.description,
+        },
+        { headers: authHeaders }
+      );
       toast.success("Category updated successfully");
       setEditingCategory(null);
       setShowModal(false);
@@ -117,7 +114,7 @@ const CategoryManagement = () => {
 
     try {
       setLoading(true);
-      await api.delete(`/categories/${categoryToDelete.id}`);
+  await api.delete(`/categories/${categoryToDelete.id}`, { headers: authHeaders });
       toast.success("Category deleted successfully");
       setShowDeleteModal(false);
       setCategoryToDelete(null);

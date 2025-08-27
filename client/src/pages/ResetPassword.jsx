@@ -4,7 +4,20 @@ import { useAuth } from "../contexts/authentication";
 import Navbar from "../Components/NavbarSection";
 import FooterSection from "../Components/FooterSection";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Resolve absolute API base for production or same-origin in dev
+const resolveApiBase = () => {
+  const raw = (import.meta.env.VITE_API_URL || '').trim();
+  if (raw && /^https?:\/\//i.test(raw)) return raw.replace(/\/$/, '');
+  return '';
+};
+const API_BASE = resolveApiBase();
+
+// Normalize image/asset URL: supports absolute, data URL, or /uploads/* paths
+const buildAssetUrl = (path) => {
+  if (!path) return path;
+  if (/^(https?:)?\/\//i.test(path) || /^data:/i.test(path)) return path;
+  return import.meta.env.DEV ? path : (API_BASE ? `${API_BASE}${path}` : path);
+};
 
 const ResetPassword = () => {
   const { user, token } = useAuth();
@@ -68,20 +81,18 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/profile/reset-password`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            currentPassword: formData.currentPassword,
-            newPassword: formData.newPassword,
-          }),
-        }
-      );
+      const base = import.meta.env.DEV ? '/api' : (API_BASE ? `${API_BASE}/api` : '/api');
+      const response = await fetch(`${base}/profile/reset-password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+        }),
+      });
 
       const data = await response.json();
 
@@ -133,10 +144,10 @@ const ResetPassword = () => {
           <div className="flex items-center space-x-4 p-6 border-b">
             <div className="w-16 h-16 bg-gray-300 rounded-full overflow-hidden">
               <img
-                src={
+                src={buildAssetUrl(
                   user.profile_image ||
-                  "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"
-                }
+                    "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"
+                )}
                 alt="Profile"
                 className="w-full h-full object-cover"
               />

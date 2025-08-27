@@ -4,9 +4,7 @@ import ArticleTable from "./ArticleTable ";
 import DeleteModal from "./deleteModal";
 import { useCustomToast } from "../../Components/ui/CustomToast";
 import { useAuth } from "../../contexts/authentication";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { api } from "../../utils/api";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -30,13 +28,8 @@ const Dashboard = () => {
     limit: 10,
   });
 
-  // Create axios instance with auth header
-  const api = axios.create({
-    baseURL: `${API_URL}/api`,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  // Authorization headers helper
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
   // Fetch articles
   const fetchArticles = async () => {
@@ -50,7 +43,7 @@ const Dashboard = () => {
         offset: (pagination.currentPage - 1) * pagination.limit,
       };
 
-      const response = await api.get("/articles", { params });
+  const response = await api.get("/articles", { params, headers: authHeaders });
 
       // Handle different response structures
       const articlesData =
@@ -78,7 +71,7 @@ const Dashboard = () => {
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const response = await api.get("/categories");
+  const response = await api.get("/categories", { headers: authHeaders });
       // Handle different response structures
       const categoriesData = response.data?.data || response.data || [];
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
@@ -113,7 +106,7 @@ const Dashboard = () => {
     const loadingToast = toast.loading("Deleting article...");
 
     try {
-      await api.delete(`/articles/${deleteModal.articleId}`);
+  await api.delete(`/articles/${deleteModal.articleId}`, { headers: authHeaders });
 
       toast.dismiss(loadingToast);
       toast.success("Article deleted successfully");

@@ -2,9 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCustomToast } from "../../Components/ui/CustomToast";
 import { useAuth } from "../../contexts/authentication";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { api, buildAssetUrl } from "../../utils/api";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -23,13 +21,8 @@ const Profile = () => {
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Create axios instance
-  const api = axios.create({
-    baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  // Authorization headers helper
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
   useEffect(() => {
     if (!token) {
@@ -49,7 +42,7 @@ const Profile = () => {
       });
 
       if (user.profile_image_url) {
-        setPreviewImage(`${API_URL}${user.profile_image_url}`);
+        setPreviewImage(buildAssetUrl(user.profile_image_url));
       }
     }
   };
@@ -119,6 +112,7 @@ const Profile = () => {
       // Make API call
       const response = await api.put("/auth/profile", formDataToSend, {
         headers: {
+          ...authHeaders,
           "Content-Type": "multipart/form-data",
         },
       });

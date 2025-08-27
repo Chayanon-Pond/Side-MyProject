@@ -4,7 +4,23 @@ import axios from 'axios';
 import NavbarSection from '../Components/NavbarSection';
 import FooterSection from '../Components/FooterSection';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Resolve API base: absolute VITE_API_URL if provided, otherwise same-origin
+const resolveApiBase = () => {
+  const raw = (import.meta.env.VITE_API_URL || '').trim();
+  if (raw && /^https?:\/\//i.test(raw)) {
+    return raw.replace(/\/$/, '');
+  }
+  return '';
+};
+const API_BASE = resolveApiBase();
+
+// Build asset URL that works in dev (Vite proxy) and production
+const buildAssetUrl = (path) => {
+  if (!path) return '/img/mc_homepage.jpg';
+  if (/^https?:\/\//i.test(path)) return path; // already absolute
+  // In dev, Vite proxies /uploads to the server; in prod, prefix with API_BASE if set
+  return import.meta.env.DEV ? path : (API_BASE ? `${API_BASE}${path}` : path);
+};
 
 function ArticleDetail() {
   const { id } = useParams();
@@ -16,7 +32,7 @@ function ArticleDetail() {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
+    baseURL: import.meta.env.DEV ? '/api' : (API_BASE ? `${API_BASE}/api` : '/api'),
   });
 
   useEffect(() => {
@@ -146,10 +162,10 @@ function ArticleDetail() {
           <div className="mb-8">
             <img
               className="w-full h-96 object-cover rounded-lg"
-              src={`${API_URL}${article.featured_image_url}`}
+              src={buildAssetUrl(article.featured_image_url)}
               alt={article.featured_image_alt || article.title}
               onError={(e) => {
-                e.target.src = "./public/img/mc_homepage.jpg";
+                e.target.src = '/img/mc_homepage.jpg';
               }}
             />
           </div>
@@ -200,7 +216,7 @@ function ArticleDetail() {
                 >
                   <img
                     className="w-full h-48 object-cover"
-                    src={related.featured_image_url ? `${API_URL}${related.featured_image_url}` : "./public/img/mc_homepage.jpg"}
+                    src={related.featured_image_url ? buildAssetUrl(related.featured_image_url) : '/img/mc_homepage.jpg'}
                     alt={related.title}
                   />
                   <div className="p-4">

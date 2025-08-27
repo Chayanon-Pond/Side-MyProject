@@ -3,9 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useCustomToast } from "../../Components/ui/CustomToast";
 import { useAuth } from "../../contexts/authentication";
 import DeleteModal from "./deleteModal";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { api, buildAssetUrl } from "../../utils/api";
 
 const EditArticle = () => {
   const navigate = useNavigate();
@@ -29,13 +27,8 @@ const EditArticle = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Create axios instance
-  const api = axios.create({
-    baseURL: `${API_URL}/api`,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  // Authorization headers helper
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
   // Load article data
   useEffect(() => {
@@ -49,7 +42,7 @@ const EditArticle = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get("/categories");
+  const response = await api.get("/categories", { headers: authHeaders });
       const categoriesData = response.data?.data || response.data || [];
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
@@ -60,7 +53,7 @@ const EditArticle = () => {
 
   const fetchArticle = async () => {
     try {
-      const response = await api.get(`/articles/${id}`);
+  const response = await api.get(`/articles/${id}`, { headers: authHeaders });
       // Handle the response structure (could be response.data.data or response.data.article)
       const article = response.data.data || response.data.article || response.data;
       
@@ -78,7 +71,7 @@ const EditArticle = () => {
       });
       
       if (article.featured_image_url) {
-        setPreviewImage(`${API_URL}${article.featured_image_url}`);
+        setPreviewImage(buildAssetUrl(article.featured_image_url));
       }
       
       setLoading(false);
@@ -156,6 +149,7 @@ const EditArticle = () => {
       // Make API call
       const response = await api.put(`/articles/${id}`, formDataToSend, {
         headers: {
+          ...authHeaders,
           "Content-Type": "multipart/form-data",
         },
       });
@@ -182,7 +176,7 @@ const EditArticle = () => {
     const loadingToast = toast.loading("Deleting article...");
 
     try {
-      await api.delete(`/articles/${id}`);
+  await api.delete(`/articles/${id}`, { headers: authHeaders });
       
       toast.dismiss(loadingToast);
       toast.success("Article deleted successfully");

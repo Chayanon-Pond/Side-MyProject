@@ -2,9 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCustomToast } from "../../Components/ui/CustomToast";
 import { useAuth } from "../../contexts/authentication";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { api } from "../../utils/api";
 
 const CreateArticle = () => {
   const navigate = useNavigate();
@@ -26,13 +24,8 @@ const CreateArticle = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Create axios instance
-  const api = axios.create({
-    baseURL: `${API_URL}/api`,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  // Authorization headers helper
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
   // Fetch categories on mount
   useEffect(() => {
@@ -41,7 +34,7 @@ const CreateArticle = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get("/categories");
+  const response = await api.get("/categories", { headers: authHeaders });
       // Handle different response structures
       const categoriesData = response.data?.data || response.data || [];
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
@@ -130,6 +123,7 @@ const CreateArticle = () => {
       // Make API call
       const response = await api.post("/articles", formDataToSend, {
         headers: {
+          ...authHeaders,
           "Content-Type": "multipart/form-data",
         },
       });

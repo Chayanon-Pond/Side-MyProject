@@ -4,7 +4,21 @@ import { useAuth } from "../contexts/authentication";
 import Navbar from "../Components/NavbarSection";
 import FooterSection from "../Components/FooterSection";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Resolve absolute API base (prod) or same-origin (dev)
+const resolveApiBase = () => {
+  const raw = (import.meta.env.VITE_API_URL || '').trim();
+  if (raw && /^https?:\/\//i.test(raw)) return raw.replace(/\/$/, '');
+  return '';
+};
+const API_BASE = resolveApiBase();
+
+// Build asset URL for images stored on server (/uploads/*) or absolute URLs
+const buildAssetUrl = (path) => {
+  if (!path) return path;
+  if (/^(https?:)?\/\//i.test(path) || /^data:/i.test(path)) return path; // absolute or data URL
+  // In dev, Vite proxies /uploads; in prod, prefix with API_BASE if set
+  return import.meta.env.DEV ? path : (API_BASE ? `${API_BASE}${path}` : path);
+};
 
 const Profile = () => {
   const { user, token } = useAuth();
@@ -24,10 +38,10 @@ const Profile = () => {
         username: user.username || "",
         email: user.email || "",
       });
-      setProfileImage(
+      const rawImg =
         user.profile_image ||
-          "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"
-      );
+        "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg";
+      setProfileImage(buildAssetUrl(rawImg));
     }
   }, [user]);
 
@@ -55,7 +69,8 @@ const Profile = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/profile/update`, {
+  const base = import.meta.env.DEV ? '/api' : (API_BASE ? `${API_BASE}/api` : '/api');
+  const response = await fetch(`${base}/profile/update`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

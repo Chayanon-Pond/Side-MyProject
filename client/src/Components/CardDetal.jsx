@@ -9,7 +9,23 @@ import CommentForm from "./ui/CommentForm";
 import CommentList from "./ui/CommentList";
 import ArticleHeader from "./ui/ArticleHeader";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+// Resolve API base URL consistently (dev uses Vite proxy, prod uses env or same-origin)
+const resolveApiUrl = () => {
+  const envUrl = (import.meta.env.VITE_API_URL ?? '').trim();
+  if (/^https?:\/\//i.test(envUrl)) return envUrl.replace(/\/$/, '');
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  if (import.meta.env.DEV && (origin.includes('localhost:5173') || origin.includes('127.0.0.1:5173'))) {
+    return 'http://localhost:3001';
+  }
+  return origin || 'http://localhost:3001';
+};
+const API_URL = resolveApiUrl();
+const buildAssetUrl = (path) => {
+  if (!path) return '';
+  if (/^https?:\/\//i.test(path)) return path; // already absolute (e.g., Cloudinary)
+  const joined = `${API_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+  return joined;
+};
 import SocialShare from "./ui/SocialShare";
 
 function CardDetal() {
@@ -268,7 +284,7 @@ function CardDetal() {
           <div className="mb-8">
             <img
               className="w-full h-96 object-cover rounded-lg"
-              src={`${API_URL}${article.featured_image_url}`}
+              src={buildAssetUrl(article.featured_image_url)}
               alt={article.featured_image_alt || article.title || 'Article image'}
               onError={(e) => {
                 e.target.src = "./public/img/mc_homepage.jpg";
@@ -332,10 +348,7 @@ function CardDetal() {
                 >
                   <img
                     className="w-full h-48 object-cover"
-                    src={
-                      related.featured_image_url ? `${API_URL}${related.featured_image_url}` :
-                      "./public/img/mc_homepage.jpg"
-                    }
+                    src={related.featured_image_url ? buildAssetUrl(related.featured_image_url) : "./public/img/mc_homepage.jpg"}
                     alt={related.title}
                   />
                   <div className="p-4">

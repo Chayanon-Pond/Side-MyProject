@@ -2,9 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCustomToast } from "../../Components/ui/CustomToast";
 import { useAuth } from "../../contexts/authentication";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+import { api } from "../../utils/api";
 
 const Notification = () => {
   const navigate = useNavigate();
@@ -15,13 +13,8 @@ const Notification = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all, unread, read
 
-  // Create axios instance
-  const api = axios.create({
-    baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  // Authorization headers helper
+  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
   useEffect(() => {
     if (!token) {
@@ -34,7 +27,7 @@ const Notification = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/notifications?filter=${filter}`);
+  const response = await api.get(`/notifications?filter=${filter}`, { headers: authHeaders });
       console.log('Notifications response:', response.data); // Debug log
       
       // Handle different response structures
@@ -62,7 +55,7 @@ const Notification = () => {
 
   const markAsRead = async (notificationId) => {
     try {
-      await api.put(`/notifications/${notificationId}/read`);
+  await api.put(`/notifications/${notificationId}/read`, null, { headers: authHeaders });
       setNotifications((prev) =>
         prev.map((notif) =>
           notif.id === notificationId ? { ...notif, is_read: true } : notif
@@ -76,7 +69,7 @@ const Notification = () => {
 
   const markAllAsRead = async () => {
     try {
-      await api.put("/notifications/mark-all-read");
+  await api.put("/notifications/mark-all-read", null, { headers: authHeaders });
       setNotifications((prev) =>
         prev.map((notif) => ({ ...notif, is_read: true }))
       );
@@ -89,7 +82,7 @@ const Notification = () => {
 
   const deleteNotification = async (notificationId) => {
     try {
-      await api.delete(`/notifications/${notificationId}`);
+  await api.delete(`/notifications/${notificationId}`, { headers: authHeaders });
       setNotifications((prev) =>
         prev.filter((notif) => notif.id !== notificationId)
       );
