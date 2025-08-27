@@ -3,8 +3,10 @@ import connectionPool from '../../utils/database.js';
 // Get notifications for the authenticated user
 export const getNotifications = async (req, res) => {
   try {
-    const userId = req.user.id; // Changed from req.user.userId
-    const { filter = 'all', limit = 50, offset = 0 } = req.query;
+  const userId = req.user.id; // Changed from req.user.userId
+  const { filter = 'all', limit = 50, offset = 0 } = req.query;
+  const limitNum = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
+  const offsetNum = Math.max(parseInt(offset, 10) || 0, 0);
 
     let query = `
       SELECT 
@@ -18,8 +20,8 @@ export const getNotifications = async (req, res) => {
         n.updated_at,
         u.full_name as sender_name,
         u.profile_image_url as sender_avatar
-      FROM notifications n
-      LEFT JOIN users u ON (n.data::json->>'sender_id')::int = u.id
+  FROM notifications n
+  LEFT JOIN users u ON (n.data->>'sender_id')::int = u.id
       WHERE n.user_id = $1
     `;
 
@@ -34,15 +36,15 @@ export const getNotifications = async (req, res) => {
     }
 
     // Add ordering and pagination
-    query += ` ORDER BY n.created_at DESC`;
+  query += ` ORDER BY n.created_at DESC`;
     
-    paramCount++;
-    query += ` LIMIT $${paramCount}`;
-    params.push(parseInt(limit));
+  paramCount++;
+  query += ` LIMIT $${paramCount}`;
+  params.push(limitNum);
     
-    paramCount++;
-    query += ` OFFSET $${paramCount}`;
-    params.push(parseInt(offset));
+  paramCount++;
+  query += ` OFFSET $${paramCount}`;
+  params.push(offsetNum);
 
     const result = await connectionPool.query(query, params);
 
