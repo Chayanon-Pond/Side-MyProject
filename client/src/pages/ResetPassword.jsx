@@ -185,29 +185,18 @@ const ResetPassword = () => {
                 </Link>
 
                 <div className="flex items-center space-x-3 p-3 rounded-lg bg-white border">
-                  <svg
-                    className="w-5 h-5 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z"
-                    />
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="10" width="12" height="10" rx="2" ry="2" strokeWidth={2} />
+                    <path d="M8 10V7h8v3" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  <span className="text-gray-700 font-medium">
-                    Reset password
-                  </span>
+                  <span className="text-gray-700 font-medium">Reset password</span>
                 </div>
               </div>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 p-6">
-              <form onSubmit={handleSubmit} className="space-y-6 max-w-md">
+            {/* Content */}
+            <div className="w-3/4 p-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Current password
@@ -218,16 +207,12 @@ const ResetPassword = () => {
                     value={formData.currentPassword}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black ${
-                      errors.currentPassword
-                        ? "border-red-500"
-                        : "border-gray-300"
+                      errors.currentPassword ? "border-red-500" : "border-gray-300"
                     }`}
                     placeholder="Current password"
                   />
                   {errors.currentPassword && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.currentPassword}
-                    </p>
+                    <p className="mt-1 text-sm text-red-500">{errors.currentPassword}</p>
                   )}
                 </div>
 
@@ -246,9 +231,7 @@ const ResetPassword = () => {
                     placeholder="New password"
                   />
                   {errors.newPassword && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.newPassword}
-                    </p>
+                    <p className="mt-1 text-sm text-red-500">{errors.newPassword}</p>
                   )}
                 </div>
 
@@ -262,16 +245,12 @@ const ResetPassword = () => {
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black ${
-                      errors.confirmPassword
-                        ? "border-red-500"
-                        : "border-gray-300"
+                      errors.confirmPassword ? "border-red-500" : "border-gray-300"
                     }`}
                     placeholder="Confirm new password"
                   />
                   {errors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.confirmPassword}
-                    </p>
+                    <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
                   )}
                 </div>
 
