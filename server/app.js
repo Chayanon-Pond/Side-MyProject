@@ -94,6 +94,20 @@ async function initializeDatabase() {
           )
         `);
         console.log('✅ Added notifications table if missing');
+        // Ensure notifications table has required columns even if it already existed
+        try {
+          await pool.query(`
+            ALTER TABLE notifications 
+            ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}',
+            ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE,
+            ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          `);
+          await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)`);
+          await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)`);
+          await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type)`);
+        } catch (e) {
+          console.log('⚠️  Notifications table migration check skipped:', e.message);
+        }
       } catch (error) {
         console.log('⚠️  Could not add missing tables/columns:', error.message);
       }
