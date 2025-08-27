@@ -2,6 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import connectionPool from '../../utils/database.js';
 import { upload, deleteFile } from '../../middleware/upload.js';
+import { createNotificationHelper } from '../notifications/notifications-handlers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -114,7 +115,7 @@ export const createArticle = async (req, res) => {
           }
         }
         
-        // Commit transaction
+  // Commit transaction
         await connectionPool.query('COMMIT');
         
         // Get complete article with relations
@@ -134,6 +135,25 @@ export const createArticle = async (req, res) => {
           [article.id]
         );
         
+        // Create notifications if published
+        try {
+          if (status === 'published') {
+            // Notify all users except author (simple broadcast). In real app, choose followers/subscribers.
+            const users = await connectionPool.query('SELECT id FROM users WHERE id <> $1', [author_id]);
+            await Promise.all(
+              users.rows.map(u => createNotificationHelper(
+                u.id,
+                'article_published',
+                'New article published',
+                `${completeArticle.rows[0].author_name} published: ${title}`,
+                { article_id: article.id, author_id, slug: finalSlug }
+              ))
+            );
+          }
+        } catch (notifyErr) {
+          console.warn('Notification emit failed:', notifyErr?.message || notifyErr);
+        }
+
         res.status(201).json({
           message: status === 'published' 
             ? 'Article published successfully' 

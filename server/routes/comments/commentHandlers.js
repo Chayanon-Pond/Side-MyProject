@@ -1,4 +1,5 @@
 import connectionPool from '../../utils/database.js';
+import { createNotificationHelper } from '../notifications/notifications-handlers.js';
 
 // Get comments for an article
 export const getCommentsByArticle = async (req, res) => {
@@ -138,7 +139,7 @@ export const createComment = async (req, res) => {
       'approved' // Auto-approve for now, can be changed to 'pending' for moderation
     ]);
 
-    // Get the comment with user information
+  // Get the comment with user information
     const commentQuery = `
       SELECT 
         c.id,
@@ -156,6 +157,25 @@ export const createComment = async (req, res) => {
     `;
 
     const commentResult = await connectionPool.query(commentQuery, [result.rows[0].id]);
+
+    // Notify article author (skip if author comments on own article)
+    try {
+      const owner = await connectionPool.query('SELECT author_id, title, slug FROM articles WHERE id = $1', [articleId]);
+      if (owner.rows[0]) {
+        const authorId = owner.rows[0].author_id;
+        if (authorId && authorId !== userId) {
+          await createNotificationHelper(
+            authorId,
+            'comment',
+            'New comment on your article',
+            `${commentResult.rows[0].user_username || 'Someone'} commented on "${owner.rows[0].title}"`,
+            { article_id: Number(articleId), comment_id: result.rows[0].id, slug: owner.rows[0].slug, sender_id: userId }
+          );
+        }
+      }
+    } catch (notifyErr) {
+      console.warn('Comment notification failed:', notifyErr?.message || notifyErr);
+    }
 
     res.status(201).json({
       message: 'Comment created successfully',
