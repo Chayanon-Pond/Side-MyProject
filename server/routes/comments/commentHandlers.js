@@ -161,16 +161,35 @@ export const createComment = async (req, res) => {
     // Notify article author (skip if author comments on own article)
     try {
       const owner = await connectionPool.query('SELECT author_id, title, slug FROM articles WHERE id = $1', [articleId]);
-      if (owner.rows[0]) {
-        const authorId = owner.rows[0].author_id;
+      const articleInfo = owner.rows[0];
+      if (articleInfo) {
+        const authorId = articleInfo.author_id;
         if (authorId && authorId !== userId) {
           await createNotificationHelper(
             authorId,
             'comment',
             'New comment on your article',
-            `${commentResult.rows[0].user_username || 'Someone'} commented on "${owner.rows[0].title}"`,
-            { article_id: Number(articleId), comment_id: result.rows[0].id, slug: owner.rows[0].slug, sender_id: userId }
+            `${commentResult.rows[0].user_username || 'Someone'} commented on "${articleInfo.title}"`,
+            { article_id: Number(articleId), comment_id: result.rows[0].id, slug: articleInfo.slug, sender_id: userId }
           );
+        }
+
+        // If this is a reply, also notify parent comment owner (avoid duplicate/author/self)
+        if (parent_id) {
+          const parentOwner = await connectionPool.query(
+            'SELECT user_id FROM comments WHERE id = $1',
+            [parent_id]
+          );
+          const parentUserId = parentOwner.rows[0]?.user_id;
+          if (parentUserId && parentUserId !== userId && parentUserId !== authorId) {
+            await createNotificationHelper(
+              parentUserId,
+              'comment',
+              'New reply to your comment',
+              `${commentResult.rows[0].user_username || 'Someone'} replied to your comment on "${articleInfo.title}"`,
+              { article_id: Number(articleId), comment_id: result.rows[0].id, parent_id, slug: articleInfo.slug, sender_id: userId }
+            );
+          }
         }
       }
     } catch (notifyErr) {

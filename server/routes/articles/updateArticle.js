@@ -2,6 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import connectionPool from '../../utils/database.js';
 import { upload, deleteFile } from '../../middleware/upload.js';
+import { createNotificationHelper } from '../notifications/notifications-handlers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,6 +73,7 @@ export const updateArticle = async (req, res) => {
         const updates = [];
         const values = [];
         let paramCount = 0;
+        let becamePublished = false;
         
         if (title !== undefined) {
           paramCount++;
@@ -103,7 +105,7 @@ export const updateArticle = async (req, res) => {
           values.push(category_id);
         }
           
-        if (status !== undefined) {
+    if (status !== undefined) {
           paramCount++;
           updates.push(`status = $${paramCount}`);
           values.push(status);
@@ -113,6 +115,7 @@ export const updateArticle = async (req, res) => {
             paramCount++;
             updates.push(`published_at = $${paramCount}`);
             values.push(new Date());
+      becamePublished = true;
           }
         }
         
@@ -201,7 +204,7 @@ export const updateArticle = async (req, res) => {
           }
         }
         
-        // Commit transaction
+  // Commit transaction
         await connectionPool.query('COMMIT');
         
         // Get updated article with relations
@@ -225,6 +228,25 @@ export const updateArticle = async (req, res) => {
           message: 'Article updated successfully',
           article: completeArticle.rows[0]
         });
+        
+        // After successful update, if this change published the article, notify all users except author
+        try {
+          if (becamePublished) {
+            const updated = completeArticle.rows[0];
+            const users = await connectionPool.query('SELECT id FROM users WHERE id <> $1', [author_id]);
+            await Promise.all(
+              users.rows.map(u => createNotificationHelper(
+                u.id,
+                'article_published',
+                'New article published',
+                `${updated.author_name} published: ${updated.title}`,
+                { article_id: updated.id, author_id, slug: updated.slug, sender_id: author_id }
+              ))
+            );
+          }
+        } catch (notifyErr) {
+          console.warn('Notification emit (update publish) failed:', notifyErr?.message || notifyErr);
+        }
         
       } catch (error) {
         await connectionPool.query('ROLLBACK');
