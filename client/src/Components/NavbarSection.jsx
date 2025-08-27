@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/authentication";
 import NotificationDropdown from "./ui/NotificationDropdown";
+import { buildAssetUrl } from "../utils/api";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -78,7 +79,7 @@ const Navbar = () => {
               >
                 <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center overflow-hidden">
                   <img
-                    src="https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"
+                    src={user.profile_image_url ? buildAssetUrl(user.profile_image_url) : "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"}
                     alt={user.full_name || user.fullName || user.name}
                     className="w-full h-full object-cover"
                   />
@@ -259,7 +260,7 @@ const Navbar = () => {
                 <div className="flex items-center space-x-3 py-2 px-4">
                   <div className="w-10 h-10 bg-gray-500 rounded-full flex items-center justify-center overflow-hidden">
                     <img
-                      src="https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"
+                      src={user.profile_image_url ? buildAssetUrl(user.profile_image_url) : "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"}
                       alt={user.full_name || user.fullName || user.name}
                       className="w-full h-full object-cover"
                     />

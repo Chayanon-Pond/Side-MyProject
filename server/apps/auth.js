@@ -3,7 +3,7 @@ import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import connectionPool from '../utils/database.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { upload } from '../middleware/upload.js';
+import { upload, uploadProfile } from '../middleware/upload.js';
 import fs from 'fs/promises';
 
 const authRouter = Router();
@@ -134,7 +134,8 @@ authRouter.post("/login", async (req, res) => {
 
 // Update profile endpoint
 authRouter.put("/profile", authenticateToken, (req, res) => {
-  upload.single('profile_image')(req, res, async (err) => {
+  // Use dedicated profile uploader so files go to uploads/profiles
+  uploadProfile.single('profile_image')(req, res, async (err) => {
     if (err) {
       return res.status(400).json({ error: err.message });
     }

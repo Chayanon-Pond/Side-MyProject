@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../contexts/notifications';
+import { buildAssetUrl } from '../../utils/api';
 
 const NotificationDropdown = () => {
   const navigate = useNavigate();
@@ -112,9 +113,9 @@ const NotificationDropdown = () => {
                     <div className="flex items-start space-x-3">
                       {/* Avatar or Icon */}
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                        {notification.sender_avatar ? (
+            {notification.sender_avatar ? (
                           <img
-                            src={notification.sender_avatar}
+              src={buildAssetUrl(notification.sender_avatar)}
                             alt={notification.sender_name}
                             className="w-full h-full object-cover"
                           />

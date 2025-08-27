@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './authentication';
-import { API_BASE } from '../utils/api';
+import { api, API_BASE, buildAssetUrl } from '../utils/api';
 
 const NotificationContext = createContext();
 
@@ -24,18 +24,16 @@ export const NotificationProvider = ({ children }) => {
     
     setIsLoading(true);
     try {
-  const response = await fetch(`${API_BASE}/api/notifications`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const { data } = await api.get('/notifications', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { limit: 50, offset: 0 }
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
-      }
+      const items = (data.notifications || []).map(n => ({
+        ...n,
+        sender_avatar: n.sender_avatar ? buildAssetUrl(n.sender_avatar) : n.sender_avatar
+      }));
+      setNotifications(items);
+      setUnreadCount(data.unreadCount || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
@@ -48,15 +46,10 @@ export const NotificationProvider = ({ children }) => {
     if (!token) return;
     
     try {
-  const response = await fetch(`${API_BASE}/api/notifications/${notificationId}/read`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      await api.put(`/notifications/${notificationId}/read`, null, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      
-      if (response.ok) {
+
         setNotifications(prev => 
           prev.map(notif => 
             notif.id === notificationId 
@@ -65,7 +58,6 @@ export const NotificationProvider = ({ children }) => {
           )
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
-      }
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -76,20 +68,14 @@ export const NotificationProvider = ({ children }) => {
     if (!token) return;
     
     try {
-  const response = await fetch(`${API_BASE}/api/notifications/mark-all-read`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      await api.put('/notifications/mark-all-read', null, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      
-      if (response.ok) {
+
         setNotifications(prev => 
           prev.map(notif => ({ ...notif, is_read: true }))
         );
         setUnreadCount(0);
-      }
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }

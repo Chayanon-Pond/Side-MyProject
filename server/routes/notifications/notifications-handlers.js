@@ -21,7 +21,12 @@ export const getNotifications = async (req, res) => {
         u.full_name as sender_name,
         u.profile_image_url as sender_avatar
   FROM notifications n
-  LEFT JOIN users u ON (n.data->>'sender_id')::int = u.id
+  /*
+    Join sender info safely:
+    - Cast u.id to text to avoid failing when sender_id is missing/empty
+    - Use ->> on JSON/JSONB; COALESCE to empty string keeps join safe
+  */
+  LEFT JOIN users u ON COALESCE(n.data->>'sender_id','') = u.id::text
       WHERE n.user_id = $1
     `;
 
