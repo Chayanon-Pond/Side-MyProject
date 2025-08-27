@@ -7,7 +7,7 @@ import { api } from "../../utils/api";
 const Notification = () => {
   const navigate = useNavigate();
   const toast = useCustomToast();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +50,28 @@ const Notification = () => {
       toast.error("Failed to load notifications");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createTestNotification = async () => {
+    if (!user) return;
+    try {
+      await api.post(
+        "/notifications",
+        {
+          user_id: user.id,
+          type: "system",
+          title: "Test notification",
+          message: "This is a test notification.",
+          data: { sender_id: user.id }
+        },
+        { headers: authHeaders }
+      );
+      toast.success("Created a test notification");
+      fetchNotifications();
+    } catch (err) {
+      console.error("Failed to create test notification:", err);
+      toast.error("Failed to create test notification");
     }
   };
 
@@ -215,6 +237,13 @@ const Notification = () => {
             Mark all as read
           </button>
         )}
+        <div className="flex-1" />
+        <button
+          onClick={createTestNotification}
+          className="ml-4 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+        >
+          Create test notification
+        </button>
       </div>
 
       {/* Filter Tabs */}
@@ -269,6 +298,14 @@ const Notification = () => {
               />
             </svg>
             <p>No notifications found</p>
+            <div className="mt-4">
+              <button
+                onClick={createTestNotification}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Create a test notification
+              </button>
+            </div>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
