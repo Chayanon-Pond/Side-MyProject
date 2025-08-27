@@ -105,6 +105,25 @@ async function initializeDatabase() {
           await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)`);
           await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)`);
           await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type)`);
+
+          // Drop legacy CHECK constraints on notifications.type that restrict allowed values
+          // Some earlier migrations may have created a constraint that blocks values like 'system'
+          const constraints = await pool.query(`
+            SELECT conname
+            FROM pg_constraint c
+            JOIN pg_class t ON c.conrelid = t.oid
+            JOIN pg_namespace nsp ON nsp.oid = t.relnamespace
+            WHERE t.relname = 'notifications' AND c.contype = 'c' AND pg_get_constraintdef(c.oid) ILIKE '%type%'
+          `);
+          for (const row of constraints.rows) {
+            const name = row.conname;
+            try {
+              await pool.query(`ALTER TABLE notifications DROP CONSTRAINT IF EXISTS ${name}`);
+              console.log(`🧹 Dropped legacy constraint: ${name}`);
+            } catch (dropErr) {
+              console.log(`⚠️  Could not drop constraint ${name}:`, dropErr.message);
+            }
+          }
         } catch (e) {
           console.log('⚠️  Notifications table migration check skipped:', e.message);
         }
