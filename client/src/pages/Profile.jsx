@@ -3,31 +3,17 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/authentication";
 import Navbar from "../Components/NavbarSection";
 import FooterSection from "../Components/FooterSection";
-
-// Resolve absolute API base (prod) or same-origin (dev)
-const resolveApiBase = () => {
-  const raw = (import.meta.env.VITE_API_URL || '').trim();
-  if (raw && /^https?:\/\//i.test(raw)) return raw.replace(/\/$/, '');
-  return '';
-};
-const API_BASE = resolveApiBase();
-
-// Build asset URL for images stored on server (/uploads/*) or absolute URLs
-const buildAssetUrl = (path) => {
-  if (!path) return path;
-  if (/^(https?:)?\/\//i.test(path) || /^data:/i.test(path)) return path; // absolute or data URL
-  // In dev, Vite proxies /uploads; in prod, prefix with API_BASE if set
-  return import.meta.env.DEV ? path : (API_BASE ? `${API_BASE}${path}` : path);
-};
+import { api, buildAssetUrl } from "../utils/api";
 
 const Profile = () => {
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     username: "",
     email: "",
   });
   const [profileImage, setProfileImage] = useState("");
+  const [imageFile, setImageFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
@@ -38,10 +24,8 @@ const Profile = () => {
         username: user.username || "",
         email: user.email || "",
       });
-      const rawImg =
-        user.profile_image ||
-        "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg";
-      setProfileImage(buildAssetUrl(rawImg));
+  const rawImg = user.profile_image_url || user.profile_image || "";
+  setProfileImage(rawImg ? buildAssetUrl(rawImg) : "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg");
     }
   }, [user]);
 
@@ -55,13 +39,13 @@ const Profile = () => {
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImage(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 2 * 1024 * 1024) return; // 2MB cap like server
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setProfileImage(ev.target.result);
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
@@ -69,27 +53,27 @@ const Profile = () => {
     setIsLoading(true);
 
     try {
-  const base = import.meta.env.DEV ? '/api' : (API_BASE ? `${API_BASE}/api` : '/api');
-  const response = await fetch(`${base}/profile/update`, {
-        method: "PUT",
+      // Send to the unified endpoint that handles file upload and updates profile_image_url
+      const form = new FormData();
+      form.append("full_name", formData.name);
+      form.append("username", formData.username);
+      form.append("email", formData.email);
+      if (imageFile) form.append("profile_image", imageFile);
+
+      const { data } = await api.put("/auth/profile", form, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
         },
-        body: JSON.stringify({
-          full_name: formData.name,
-          username: formData.username,
-          email: formData.email,
-          profile_image: profileImage,
-        }),
       });
 
-      if (response.ok) {
-        setShowSuccessMessage(true);
-        setTimeout(() => {
-          setShowSuccessMessage(false);
-        }, 3000);
+      if (data?.user) {
+        updateUser(data.user);
+        setProfileImage(buildAssetUrl(data.user.profile_image_url));
       }
+
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
     } catch (error) {
       console.error("Error updating profile:", error);
     } finally {
