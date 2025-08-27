@@ -40,11 +40,19 @@ const Notifications = () => {
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
-    
-    // Navigate to related page if exists
-    if (notification.link) {
-      navigate(notification.link);
+    // Navigate to related page if exists or derive from data
+    let link = notification.link;
+    if (!link && notification.data) {
+      const d = notification.data;
+      if (notification.type === 'comment' && d.article_id) {
+        link = d.comment_id ? `/detail/${d.article_id}?comment=${d.comment_id}#comments` : `/detail/${d.article_id}#comments`;
+      } else if (notification.type === 'article_published' && d.article_id) {
+        link = `/detail/${d.article_id}`;
+      } else if (d.article_id) {
+        link = `/detail/${d.article_id}`;
+      }
     }
+    if (link) navigate(link);
   };
 
   const filteredNotifications = notifications.filter(notification => {
@@ -177,7 +185,7 @@ const Notifications = () => {
                           {formatTimeAgo(notification.created_at)}
                         </p>
                         
-                        {notification.link && (
+                        {(notification.link || (notification.data && (notification.data.article_id))) && (
                           <span className="text-sm text-blue-600">
                             Click to view →
                           </span>

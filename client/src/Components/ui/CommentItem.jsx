@@ -23,7 +23,7 @@ function CommentItem({
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
+    <div id={`comment-${comment.id}`} className="bg-white rounded-lg p-6 shadow-sm">
       <div className="flex space-x-4">
         <img
           className="w-10 h-10 rounded-full"
@@ -98,7 +98,7 @@ function CommentItem({
           {comment.replies && comment.replies.length > 0 && (
             <div className="mt-4 pl-4 border-l-2 border-gray-200 space-y-4">
               {comment.replies.map((reply) => (
-                <div key={reply.id} className="flex space-x-3">
+                <div key={reply.id} id={`comment-${reply.id}`} className="flex space-x-3">
                   <img
                     className="w-8 h-8 rounded-full"
                     src="https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"

@@ -28,10 +28,26 @@ export const NotificationProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` },
         params: { limit: 50, offset: 0 }
       });
-      const items = (data.notifications || []).map(n => ({
-        ...n,
-        sender_avatar: n.sender_avatar ? buildAssetUrl(n.sender_avatar) : n.sender_avatar
-      }));
+      const items = (data.notifications || []).map(n => {
+        const d = n.data || {};
+        let link = null;
+        if (n.type === 'comment') {
+          if (d.article_id) {
+            const base = `/detail/${d.article_id}`;
+            link = d.comment_id ? `${base}?comment=${d.comment_id}#comments` : `${base}#comments`;
+          }
+        } else if (n.type === 'article_published') {
+          if (d.article_id) link = `/detail/${d.article_id}`;
+        } else if (d.article_id) {
+          link = `/detail/${d.article_id}`;
+        }
+
+        return {
+          ...n,
+          sender_avatar: n.sender_avatar ? buildAssetUrl(n.sender_avatar) : n.sender_avatar,
+          link,
+        };
+      });
       setNotifications(items);
       setUnreadCount(data.unreadCount || 0);
     } catch (error) {

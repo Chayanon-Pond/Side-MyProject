@@ -61,6 +61,29 @@ function CardDetal() {
     fetchComments();
   }, [id]);
 
+  // After comments fetched, if URL has a comment anchor/query, scroll to it
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const commentId = params.get('comment');
+    const hash = window.location.hash;
+
+    // Scroll to comments section
+    if (hash === '#comments') {
+      const el = document.getElementById('comments');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Scroll to specific comment
+    if (commentId) {
+      const targetId = `comment-${commentId}`;
+      // slight delay to ensure render
+      setTimeout(() => {
+        const node = document.getElementById(targetId);
+        if (node) node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [comments]);
+
   const fetchArticle = async () => {
     try {
       setLoading(true);
@@ -304,8 +327,8 @@ function CardDetal() {
         {/* Social Share */}
         <SocialShare />
 
-        {/* Comments Section */}
-        <section className="mb-8">
+  {/* Comments Section */}
+  <section id="comments" className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Comments ({comments?.length || 0})
           </h2>
