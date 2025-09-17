@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/authentication";
 import NotificationDropdown from "./ui/NotificationDropdown";
+import NavLinks from "./NavLinks";
 import { buildAssetUrl } from "../utils/api";
 
 const Navbar = () => {
@@ -49,14 +50,7 @@ const Navbar = () => {
         {/* Desktop Menu */}
         <div className="hidden md:flex gap-4">
           <div className="mx-auto md:pl-120 mr-20 mt-3">
-            <ul className="flex flex-col md:flex-row md:gap-10 gap-2">
-              <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">
-                <Link to="/" className="block">Home</Link>
-              </li>
-              <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">About</li>
-              <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">Contact</li>
-              <li className="text-white hover:text-white hover:underline hover:underline-offset-8 hover:decoration-white cursor-pointer">Help</li>
-            </ul>
+            <NavLinks />
           </div>
 
           {user ? (
@@ -164,22 +158,7 @@ const Navbar = () => {
           <div className="px-4 py-6 space-y-4">
             {/* Mobile Navigation Links */}
             <div className="space-y-3">
-              <Link 
-                to="/" 
-                className="block text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
-                onClick={closeMobileMenu}
-              >
-                Home
-              </Link>
-              <button className="block w-full text-left text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
-                About
-              </button>
-              <button className="block w-full text-left text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
-                Contact
-              </button>
-              <button className="block w-full text-left text-white hover:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
-                Help
-              </button>
+              <NavLinks onClick={closeMobileMenu} className="flex flex-col gap-0" />
             </div>
 
             <hr className="border-gray-600" />

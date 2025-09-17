@@ -3,6 +3,8 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRouter from './apps/auth.js';
 import articlesRouter from './routes/articles/articles-main.js';
 import categoriesRouter from './routes/categories/categories-main.js';
@@ -142,6 +144,12 @@ async function initializeDatabase() {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Helper: determine whether to serve client production build locally
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const shouldServeClientBuild = (process.env.NODE_ENV === 'production') || (String(process.env.SERVE_CLIENT_BUILD || '').toLowerCase() === 'true');
+
+
 // Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
@@ -161,6 +169,22 @@ app.use(express.urlencoded({ extended: true }));
 
 // Static file serving for uploads
 app.use('/uploads', express.static('uploads'));
+
+// Serve client build in production or when explicitly requested
+const shouldServeClient = process.env.NODE_ENV === 'production' || process.env.SERVE_CLIENT_BUILD === 'true';
+if (shouldServeClient) {
+  const path = await import('path');
+  const clientDist = path.resolve(process.cwd(), '..', 'client', 'dist');
+  console.log(`📦 Serving client build from: ${clientDist}`);
+
+  // Serve static assets
+  app.use(express.static(clientDist));
+
+  // SPA fallback for non-API routes
+  app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
 // Routes
 app.get('/', (req, res) => {
@@ -186,6 +210,18 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/comments', commentsRouter);
 app.use('/api/profile', profileRouter);
+
+// Serve client production build when requested (serves files from client/dist)
+if (shouldServeClientBuild) {
+  const clientDist = path.join(__dirname, '..', 'client', 'dist');
+  console.log(`📦 Serving client build from: ${clientDist}`);
+  app.use(express.static(clientDist));
+
+  // For SPA routes not starting with /api, return index.html
+  app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
 // Health check
 app.get('/api/health', async (req, res) => {

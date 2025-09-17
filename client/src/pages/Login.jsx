@@ -189,6 +189,9 @@ const Login = () => {
                 Sign up
               </Link>
             </p>
+            <p className="text-gray-600 text-sm">
+              Email user: some@gmail.com Password: ppond333
+            </p>
           </div>
         </div>
       </div>

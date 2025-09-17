@@ -136,8 +136,15 @@ authRouter.post("/login", async (req, res) => {
 authRouter.put("/profile", authenticateToken, (req, res) => {
   // Use dedicated profile uploader so files go to uploads/profiles
   uploadProfile.single('profile_image')(req, res, async (err) => {
+    console.log('--- PROFILE UPDATE ROUTE HIT ---');
     if (err) {
+      console.error('MULTER ERROR:', err.message);
       return res.status(400).json({ error: err.message });
+    }
+    console.log('Request body keys:', Object.keys(req.body || {}));
+    console.log('Req.file present:', !!req.file);
+    if (req.file) {
+      console.log('Uploaded file:', { originalname: req.file.originalname, filename: req.file.filename, path: req.file.path, size: req.file.size });
     }
 
     try {

@@ -8,7 +8,9 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, itemType = "item" }) => {
       <div className="bg-white rounded-lg w-full max-w-sm">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-semibold">Delete {itemType}</h2>
+          <h2 className="text-xl font-semibold text-black">
+            Delete {itemType}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"

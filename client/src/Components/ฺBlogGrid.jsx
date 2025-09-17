@@ -31,6 +31,11 @@ function BlogGrid({ searchTerm = '', selectedCategory = 'all' }) {
     baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
   });
   if (import.meta.env.DEV) {
+    // Debug the resolved API base and proxy behaviour in dev
+    // eslint-disable-next-line no-console
+    console.debug('[BlogGrid] api.defaults.baseURL ->', api.defaults.baseURL, 'API_BASE ->', API_URL);
+  }
+  if (import.meta.env.DEV) {
     // Helpful in dev to verify we're calling the correct API origin
     // eslint-disable-next-line no-console
     console.debug('[BlogGrid] API base:', api.defaults.baseURL);
@@ -58,6 +63,11 @@ function BlogGrid({ searchTerm = '', selectedCategory = 'all' }) {
 
       const articlesData = response.data?.articles || response.data?.data || response.data || [];
       const processedArticles = Array.isArray(articlesData) ? articlesData : [];
+      if (import.meta.env.DEV) {
+        // Print first few featured_image_url values to help trace missing images
+        // eslint-disable-next-line no-console
+        console.debug('[BlogGrid] fetched articles count', processedArticles.length, 'sample images', processedArticles.slice(0,6).map(a => a.featured_image_url));
+      }
       
       setAllArticles(processedArticles);
       setArticles(processedArticles.slice(0, 6)); // Initially show 6 articles

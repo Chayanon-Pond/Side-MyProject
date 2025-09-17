@@ -21,6 +21,9 @@ import AdminResetPassword from "./pages/admin/resetPassword";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import Notifications from "./pages/Notifications";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Help from "./pages/Help";
 
 import { Toaster } from "sonner";
 function App() {
@@ -39,6 +42,9 @@ function App() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/article/:id" element={<ArticleDetail />} />
             <Route path="/detail/:id" element={<CardDetal />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/help" element={<Help />} />
             {/* Admin Routes with Layout */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />

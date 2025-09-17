@@ -27,6 +27,7 @@ const buildAssetUrl = (path) => {
   return joined;
 };
 import SocialShare from "./ui/SocialShare";
+import BackButton from "./ui/BackButton";
 
 function CardDetal() {
   const { id } = useParams();
@@ -42,11 +43,22 @@ function CardDetal() {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [notice, setNotice] = useState(null); // { type: 'success'|'error', text: string }
+
+  const showNotice = (type, text, ms = 4000) => {
+    setNotice({ type, text });
+    setTimeout(() => setNotice(null), ms);
+  };
 
   // Create axios instance
   const api = axios.create({
     baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
   });
+
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.debug('[CardDetal] api.defaults.baseURL ->', api.defaults.baseURL, 'API_BASE ->', API_URL);
+  }
 
   // Add token to requests if available
   api.interceptors.request.use((config) => {
@@ -92,6 +104,10 @@ function CardDetal() {
       
       const articleData = response.data.data || response.data;
       const relatedData = response.data.relatedArticles || [];
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.debug('[CardDetal] article fetched:', { id: articleData?.id, title: articleData?.title, featured_image_url: articleData?.featured_image_url });
+      }
       
       setArticle(articleData);
       setRelatedArticles(relatedData);
@@ -131,12 +147,12 @@ function CardDetal() {
     }
 
     if (!commentText.trim()) {
-      alert("Please enter a comment");
+      showNotice('error', 'Please enter a comment');
       return;
     }
 
     if (commentText.length > 1000) {
-      alert("Comment is too long. Maximum 1000 characters allowed.");
+      showNotice('error', 'Comment is too long. Maximum 1000 characters allowed.');
       return;
     }
 
@@ -154,14 +170,14 @@ function CardDetal() {
 
       setCommentText("");
       fetchComments(); // Refresh comments
-      alert("Comment posted successfully!");
+      showNotice('success', 'Comment posted successfully!');
     } catch (error) {
       console.error("Failed to post comment:", error);
       if (error.response?.status === 401) {
-        alert("Your session has expired. Please login again.");
+        showNotice('error', 'Your session has expired. Please login again.');
         navigate("/login");
       } else {
-        alert("Failed to post comment. Please try again.");
+        showNotice('error', 'Failed to post comment. Please try again.');
       }
     } finally {
       setSubmittingComment(false);
@@ -175,12 +191,12 @@ function CardDetal() {
     }
 
     if (!replyText.trim()) {
-      alert("Please enter a reply");
+      showNotice('error', 'Please enter a reply');
       return;
     }
 
     if (replyText.length > 1000) {
-      alert("Reply is too long. Maximum 1000 characters allowed.");
+      showNotice('error', 'Reply is too long. Maximum 1000 characters allowed.');
       return;
     }
 
@@ -193,14 +209,14 @@ function CardDetal() {
       setReplyText("");
       setReplyingTo(null);
       fetchComments(); // Refresh comments
-      alert("Reply posted successfully!");
+      showNotice('success', 'Reply posted successfully!');
     } catch (error) {
       console.error("Failed to post reply:", error);
       if (error.response?.status === 401) {
-        alert("Your session has expired. Please login again.");
+        showNotice('error', 'Your session has expired. Please login again.');
         navigate("/login");
       } else {
-        alert("Failed to post reply. Please try again.");
+        showNotice('error', 'Failed to post reply. Please try again.');
       }
     }
   };
@@ -278,26 +294,8 @@ function CardDetal() {
 
       {/* Article Content */}
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors cursor-pointer"
-        >
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Back
-        </button>
+  {/* Back Button */}
+  <BackButton />
 
         {/* Article Header */}
         <ArticleHeader article={article} formatDate={formatDate} />
@@ -332,6 +330,12 @@ function CardDetal() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Comments ({comments?.length || 0})
           </h2>
+
+          {notice && (
+            <div className={`mb-4 px-4 py-2 rounded ${notice.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+              {notice.text}
+            </div>
+          )}
 
           {/* Comment Form */}
           <CommentForm
