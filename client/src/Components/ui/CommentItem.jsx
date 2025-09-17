@@ -1,5 +1,7 @@
 import React from "react";
 import { useAuth } from "../../contexts/authentication";
+import axios from "axios";
+import { resolveApiUrl } from "../../utils/api";
 
 function CommentItem({
   comment,
@@ -11,8 +13,37 @@ function CommentItem({
   onReplySubmit,
   onLoginRequired,
   formatCommentDate,
+  onCommentUpdated,
 }) {
   const { token } = useAuth();
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editContent, setEditContent] = React.useState(comment.content || "");
+
+  const API_URL = resolveApiUrl();
+
+  const handleSaveEdit = async () => {
+    if (!token) {
+      onLoginRequired?.();
+      return;
+    }
+    if (!editContent.trim()) return;
+    try {
+      const inst = axios.create({
+        baseURL: import.meta.env.DEV ? "/api" : `${API_URL}/api`,
+      });
+      inst.interceptors.request.use((cfg) => {
+        if (token) cfg.headers.Authorization = `Bearer ${token}`;
+        return cfg;
+      });
+      await inst.put(`/comments/${comment.id}`, {
+        content: editContent.trim(),
+      });
+      setIsEditing(false);
+      onCommentUpdated?.();
+    } catch (err) {
+      console.error("Failed to update comment:", err);
+    }
+  };
 
   const handleReplyClick = () => {
     if (!user || !token) {
@@ -40,20 +71,61 @@ function CommentItem({
               {formatCommentDate(comment.created_at)}
             </span>
           </div>
-          <p className="text-gray-700 mb-3 whitespace-pre-wrap">
-            {comment.content}
-          </p>
+          {!isEditing ? (
+            <p className="text-gray-700 mb-3 whitespace-pre-wrap">
+              {comment.content}
+            </p>
+          ) : (
+            <div>
+              <textarea
+                className="w-full p-2 border border-gray-300 rounded resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                rows={3}
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+              />
+              <div className="flex justify-end space-x-2 mt-2">
+                <button
+                  className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditContent(comment.content);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 cursor-pointer"
+                  onClick={handleSaveEdit}
+                  disabled={!editContent.trim()}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          )}
           <div className="flex items-center space-x-4">
             <button
               className="text-sm text-gray-500 hover:text-blue-500 transition-colors cursor-pointer"
-              onClick={handleReplyClick}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleReplyClick();
+              }}
             >
               Reply
             </button>
             {comment.user_id === user?.id && (
-              <button className="text-sm text-gray-500 hover:text-red-500 transition-colors cursor-pointer">
-                Delete
-              </button>
+              <>
+                <button
+                  className="text-sm text-gray-500 hover:text-blue-500 transition-colors cursor-pointer mr-3 "
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit
+                </button>
+                <button className="text-sm text-gray-500 hover:text-red-500 transition-colors cursor-pointer">
+                  Delete
+                </button>
+              </>
             )}
           </div>
 

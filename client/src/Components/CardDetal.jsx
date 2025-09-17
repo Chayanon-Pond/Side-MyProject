@@ -400,6 +400,7 @@ function CardDetal() {
             onReplySubmit={handleReplySubmit}
             onLoginRequired={() => setShowLoginModal(true)}
             formatCommentDate={formatCommentDate}
+            onCommentUpdated={fetchComments}
           />
         </section>
 

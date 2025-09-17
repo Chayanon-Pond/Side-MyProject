@@ -10,7 +10,8 @@ function CommentList({
   setReplyText,
   onReplySubmit,
   onLoginRequired,
-  formatCommentDate 
+  formatCommentDate,
+  onCommentUpdated
 }) {
   if (comments.length === 0) {
     return (
@@ -34,6 +35,7 @@ function CommentList({
           onReplySubmit={onReplySubmit}
           onLoginRequired={onLoginRequired}
           formatCommentDate={formatCommentDate}
+          onCommentUpdated={onCommentUpdated}
         />
       ))}
     </div>
