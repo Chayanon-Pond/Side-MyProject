@@ -2,6 +2,7 @@ import React from "react";
 import { useAuth } from "../../contexts/authentication";
 import axios from "axios";
 import { resolveApiUrl } from "../../utils/api";
+import CommentItem from "./CommentItem";
 
 function CommentItem({
   comment,
@@ -169,39 +170,23 @@ function CommentItem({
             </div>
           )}
 
-          {/* Replies */}
+          {/* Replies (render recursively so replies support edit/reply/delete) */}
           {comment.replies && comment.replies.length > 0 && (
             <div className="mt-4 pl-4 border-l-2 border-gray-200 space-y-4">
               {comment.replies.map((reply) => (
-                <div
+                <CommentItem
                   key={reply.id}
-                  id={`comment-${reply.id}`}
-                  className="flex space-x-3"
-                >
-                  <img
-                    className="w-8 h-8 rounded-full"
-                    src="https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"
-                    alt={reply.user_name}
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h5 className="text-sm font-medium text-gray-900">
-                        {reply.user_name}
-                      </h5>
-                      <span className="text-xs text-gray-500">
-                        {formatCommentDate(reply.created_at)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                      {reply.content}
-                    </p>
-                    {reply.user_id === user?.id && (
-                      <button className="text-xs text-gray-500 hover:text-red-500 mt-1">
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  comment={reply}
+                  user={user}
+                  replyingTo={replyingTo}
+                  setReplyingTo={setReplyingTo}
+                  replyText={replyText}
+                  setReplyText={setReplyText}
+                  onReplySubmit={onReplySubmit}
+                  onLoginRequired={onLoginRequired}
+                  formatCommentDate={formatCommentDate}
+                  onCommentUpdated={onCommentUpdated}
+                />
               ))}
             </div>
           )}
