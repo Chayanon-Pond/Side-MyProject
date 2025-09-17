@@ -2,7 +2,6 @@ import React from "react";
 import { useAuth } from "../../contexts/authentication";
 import axios from "axios";
 import { resolveApiUrl } from "../../utils/api";
-import CommentItem from "./CommentItem";
 
 function CommentItem({
   comment,
