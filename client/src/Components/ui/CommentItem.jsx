@@ -11,16 +11,8 @@ function CommentItem({
   onReplySubmit,
   onLoginRequired,
   formatCommentDate,
-  // optional handlers for edit/delete
-  onEditSubmit,
-  onDelete,
-  onReplyEditSubmit,
-  onReplyDelete,
 }) {
   const { token } = useAuth();
-
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [editText, setEditText] = React.useState(comment.content || "");
 
   const handleReplyClick = () => {
     if (!user || !token) {
@@ -58,56 +50,10 @@ function CommentItem({
             >
               Reply
             </button>
-
             {comment.user_id === user?.id && (
-              <>
-                {!isEditing ? (
-                  <button
-                    className="text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-                    onClick={() => {
-                      if (!user || !token) return onLoginRequired();
-                      setIsEditing(true);
-                      setEditText(comment.content || "");
-                    }}
-                  >
-                    Edit
-                  </button>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <button
-                      className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
-                      onClick={() => {
-                        setIsEditing(false);
-                        setEditText(comment.content || "");
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="text-sm bg-blue-500 text-white px-2 py-1 rounded disabled:opacity-50"
-                      onClick={() => {
-                        if (typeof onEditSubmit === "function") {
-                          onEditSubmit(comment.id, editText.trim());
-                        }
-                        setIsEditing(false);
-                      }}
-                      disabled={!editText.trim()}
-                    >
-                      Save
-                    </button>
-                  </div>
-                )}
-
-                <button
-                  className="text-sm text-gray-500 hover:text-red-500 transition-colors cursor-pointer"
-                  onClick={() => {
-                    if (!user || !token) return onLoginRequired();
-                    if (typeof onDelete === "function") onDelete(comment.id);
-                  }}
-                >
-                  Delete
-                </button>
-              </>
+              <button className="text-sm text-gray-500 hover:text-red-500 transition-colors cursor-pointer">
+                Delete
+              </button>
             )}
           </div>
 
@@ -154,92 +100,37 @@ function CommentItem({
           {/* Replies */}
           {comment.replies && comment.replies.length > 0 && (
             <div className="mt-4 pl-4 border-l-2 border-gray-200 space-y-4">
-              {comment.replies.map((reply) => {
-                const [isReplyEditing, setIsReplyEditing] = React.useState(false);
-                const [replyEditText, setReplyEditText] = React.useState(reply.content || "");
-
-                return (
-                  <div
-                    key={reply.id}
-                    id={`comment-${reply.id}`}
-                    className="flex space-x-3"
-                  >
-                    <img
-                      className="w-8 h-8 rounded-full"
-                      src="https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"
-                      alt={reply.user_name}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h5 className="text-sm font-medium text-gray-900">
-                          {reply.user_name}
-                        </h5>
-                        <span className="text-xs text-gray-500">
-                          {formatCommentDate(reply.created_at)}
-                        </span>
-                      </div>
-
-                      {!isReplyEditing ? (
-                        <>
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                            {reply.content}
-                          </p>
-                          {reply.user_id === user?.id && (
-                            <div className="mt-1 flex items-center space-x-2">
-                              <button
-                                className="text-xs text-gray-500 hover:text-gray-700"
-                                onClick={() => {
-                                  if (!user || !token) return onLoginRequired();
-                                  setIsReplyEditing(true);
-                                  setReplyEditText(reply.content || "");
-                                }}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                className="text-xs text-gray-500 hover:text-red-500"
-                                onClick={() => {
-                                  if (!user || !token) return onLoginRequired();
-                                  if (typeof onReplyDelete === "function") onReplyDelete(reply.id);
-                                }}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="mt-2">
-                          <textarea
-                            className="w-full p-2 border border-gray-300 rounded resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                            rows="2"
-                            value={replyEditText}
-                            onChange={(e) => setReplyEditText(e.target.value)}
-                          />
-                          <div className="flex justify-end space-x-2 mt-2">
-                            <button
-                              className="text-xs text-gray-500 hover:text-gray-700"
-                              onClick={() => setIsReplyEditing(false)}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              className="text-xs bg-blue-500 text-white px-2 py-1 rounded disabled:opacity-50"
-                              onClick={() => {
-                                if (typeof onReplyEditSubmit === "function") onReplyEditSubmit(reply.id, replyEditText.trim());
-                                setIsReplyEditing(false);
-                              }}
-                              disabled={!replyEditText.trim()}
-                            >
-                              Save
-                            </button>
-                          </div>
-                        </div>
-                      )}
+              {comment.replies.map((reply) => (
+                <div
+                  key={reply.id}
+                  id={`comment-${reply.id}`}
+                  className="flex space-x-3"
+                >
+                  <img
+                    className="w-8 h-8 rounded-full"
+                    src="https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg"
+                    alt={reply.user_name}
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h5 className="text-sm font-medium text-gray-900">
+                        {reply.user_name}
+                      </h5>
+                      <span className="text-xs text-gray-500">
+                        {formatCommentDate(reply.created_at)}
+                      </span>
                     </div>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {reply.content}
+                    </p>
+                    {reply.user_id === user?.id && (
+                      <button className="text-xs text-gray-500 hover:text-red-500 mt-1">
+                        Delete
+                      </button>
+                    )}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>

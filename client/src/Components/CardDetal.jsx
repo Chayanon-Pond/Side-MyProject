@@ -11,23 +11,25 @@ import ArticleHeader from "./ui/ArticleHeader";
 
 // Resolve API base URL consistently (dev uses Vite proxy, prod uses env or same-origin)
 const resolveApiUrl = () => {
-  const envUrl = (import.meta.env.VITE_API_URL ?? '').trim();
-  if (/^https?:\/\//i.test(envUrl)) return envUrl.replace(/\/$/, '');
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  if (import.meta.env.DEV && (origin.includes('localhost:5173') || origin.includes('127.0.0.1:5173'))) {
-    return 'http://localhost:3001';
+  const envUrl = (import.meta.env.VITE_API_URL ?? "").trim();
+  if (/^https?:\/\//i.test(envUrl)) return envUrl.replace(/\/$/, "");
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  if (
+    import.meta.env.DEV &&
+    (origin.includes("localhost:5173") || origin.includes("127.0.0.1:5173"))
+  ) {
+    return "http://localhost:3001";
   }
-  return origin || 'http://localhost:3001';
+  return origin || "http://localhost:3001";
 };
 const API_URL = resolveApiUrl();
 const buildAssetUrl = (path) => {
-  if (!path) return '';
+  if (!path) return "";
   if (/^https?:\/\//i.test(path)) return path; // already absolute (e.g., Cloudinary)
-  const joined = `${API_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+  const joined = `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
   return joined;
 };
 import SocialShare from "./ui/SocialShare";
-import BackButton from "./ui/BackButton";
 
 function CardDetal() {
   const { id } = useParams();
@@ -52,12 +54,17 @@ function CardDetal() {
 
   // Create axios instance
   const api = axios.create({
-    baseURL: import.meta.env.DEV ? '/api' : `${API_URL}/api`,
+    baseURL: import.meta.env.DEV ? "/api" : `${API_URL}/api`,
   });
 
   if (import.meta.env.DEV) {
     // eslint-disable-next-line no-console
-    console.debug('[CardDetal] api.defaults.baseURL ->', api.defaults.baseURL, 'API_BASE ->', API_URL);
+    console.debug(
+      "[CardDetal] api.defaults.baseURL ->",
+      api.defaults.baseURL,
+      "API_BASE ->",
+      API_URL
+    );
   }
 
   // Add token to requests if available
@@ -76,13 +83,13 @@ function CardDetal() {
   // After comments fetched, if URL has a comment anchor/query, scroll to it
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const commentId = params.get('comment');
+    const commentId = params.get("comment");
     const hash = window.location.hash;
 
     // Scroll to comments section
-    if (hash === '#comments') {
-      const el = document.getElementById('comments');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (hash === "#comments") {
+      const el = document.getElementById("comments");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     // Scroll to specific comment
@@ -91,7 +98,7 @@ function CardDetal() {
       // slight delay to ensure render
       setTimeout(() => {
         const node = document.getElementById(targetId);
-        if (node) node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 100);
     }
   }, [comments]);
@@ -100,15 +107,19 @@ function CardDetal() {
     try {
       setLoading(true);
       const response = await api.get(`/articles/${id}`);
-      console.log('Article response:', response.data); // Debug log
-      
+      console.log("Article response:", response.data); // Debug log
+
       const articleData = response.data.data || response.data;
       const relatedData = response.data.relatedArticles || [];
       if (import.meta.env.DEV) {
         // eslint-disable-next-line no-console
-        console.debug('[CardDetal] article fetched:', { id: articleData?.id, title: articleData?.title, featured_image_url: articleData?.featured_image_url });
+        console.debug("[CardDetal] article fetched:", {
+          id: articleData?.id,
+          title: articleData?.title,
+          featured_image_url: articleData?.featured_image_url,
+        });
       }
-      
+
       setArticle(articleData);
       setRelatedArticles(relatedData);
 
@@ -116,7 +127,7 @@ function CardDetal() {
       try {
         await api.post(`/articles/${id}/view`);
       } catch (viewError) {
-        console.warn('Failed to increment view count:', viewError);
+        console.warn("Failed to increment view count:", viewError);
       }
     } catch (error) {
       console.error("Failed to fetch article:", error);
@@ -129,7 +140,7 @@ function CardDetal() {
   const fetchComments = async () => {
     try {
       const response = await api.get(`/comments/article/${id}`);
-      console.log('Comments response:', response.data); // Debug log
+      console.log("Comments response:", response.data); // Debug log
       setComments(response.data.comments || response.data || []);
     } catch (error) {
       console.error("Failed to fetch comments:", error);
@@ -147,12 +158,15 @@ function CardDetal() {
     }
 
     if (!commentText.trim()) {
-      showNotice('error', 'Please enter a comment');
+      showNotice("error", "Please enter a comment");
       return;
     }
 
     if (commentText.length > 1000) {
-      showNotice('error', 'Comment is too long. Maximum 1000 characters allowed.');
+      showNotice(
+        "error",
+        "Comment is too long. Maximum 1000 characters allowed."
+      );
       return;
     }
 
@@ -170,14 +184,14 @@ function CardDetal() {
 
       setCommentText("");
       fetchComments(); // Refresh comments
-      showNotice('success', 'Comment posted successfully!');
+      showNotice("success", "Comment posted successfully!");
     } catch (error) {
       console.error("Failed to post comment:", error);
       if (error.response?.status === 401) {
-        showNotice('error', 'Your session has expired. Please login again.');
+        showNotice("error", "Your session has expired. Please login again.");
         navigate("/login");
       } else {
-        showNotice('error', 'Failed to post comment. Please try again.');
+        showNotice("error", "Failed to post comment. Please try again.");
       }
     } finally {
       setSubmittingComment(false);
@@ -191,12 +205,15 @@ function CardDetal() {
     }
 
     if (!replyText.trim()) {
-      showNotice('error', 'Please enter a reply');
+      showNotice("error", "Please enter a reply");
       return;
     }
 
     if (replyText.length > 1000) {
-      showNotice('error', 'Reply is too long. Maximum 1000 characters allowed.');
+      showNotice(
+        "error",
+        "Reply is too long. Maximum 1000 characters allowed."
+      );
       return;
     }
 
@@ -209,14 +226,14 @@ function CardDetal() {
       setReplyText("");
       setReplyingTo(null);
       fetchComments(); // Refresh comments
-      showNotice('success', 'Reply posted successfully!');
+      showNotice("success", "Reply posted successfully!");
     } catch (error) {
       console.error("Failed to post reply:", error);
       if (error.response?.status === 401) {
-        showNotice('error', 'Your session has expired. Please login again.');
+        showNotice("error", "Your session has expired. Please login again.");
         navigate("/login");
       } else {
-        showNotice('error', 'Failed to post reply. Please try again.');
+        showNotice("error", "Failed to post reply. Please try again.");
       }
     }
   };
@@ -294,8 +311,26 @@ function CardDetal() {
 
       {/* Article Content */}
       <main className="max-w-4xl mx-auto px-4 py-8">
-  {/* Back Button */}
-  <BackButton />
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors cursor-pointer"
+        >
+          <svg
+            className="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          Back
+        </button>
 
         {/* Article Header */}
         <ArticleHeader article={article} formatDate={formatDate} />
@@ -306,7 +341,9 @@ function CardDetal() {
             <img
               className="w-full h-96 object-cover rounded-lg"
               src={buildAssetUrl(article.featured_image_url)}
-              alt={article.featured_image_alt || article.title || 'Article image'}
+              alt={
+                article.featured_image_alt || article.title || "Article image"
+              }
               onError={(e) => {
                 e.target.src = "./public/img/mc_homepage.jpg";
               }}
@@ -318,21 +355,27 @@ function CardDetal() {
         <div className="prose prose-lg max-w-none mb-12">
           <div
             className="text-gray-800 leading-relaxed whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: article?.content || '' }}
+            dangerouslySetInnerHTML={{ __html: article?.content || "" }}
           />
         </div>
 
         {/* Social Share */}
         <SocialShare />
 
-  {/* Comments Section */}
-  <section id="comments" className="mb-8">
+        {/* Comments Section */}
+        <section id="comments" className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Comments ({comments?.length || 0})
           </h2>
 
           {notice && (
-            <div className={`mb-4 px-4 py-2 rounded ${notice.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+            <div
+              className={`mb-4 px-4 py-2 rounded ${
+                notice.type === "error"
+                  ? "bg-red-100 text-red-800"
+                  : "bg-green-100 text-green-800"
+              }`}
+            >
               {notice.text}
             </div>
           )}
@@ -375,7 +418,11 @@ function CardDetal() {
                 >
                   <img
                     className="w-full h-48 object-cover"
-                    src={related.featured_image_url ? buildAssetUrl(related.featured_image_url) : "./public/img/mc_homepage.jpg"}
+                    src={
+                      related.featured_image_url
+                        ? buildAssetUrl(related.featured_image_url)
+                        : "./public/img/mc_homepage.jpg"
+                    }
                     alt={related.title}
                   />
                   <div className="p-4">
@@ -397,9 +444,9 @@ function CardDetal() {
       </main>
 
       {/* Login Modal */}
-      <LoginModal 
-        isOpen={showLoginModal} 
-        onClose={() => setShowLoginModal(false)} 
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
       />
 
       <FooterSection />
