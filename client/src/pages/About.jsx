@@ -45,7 +45,7 @@ const About = () => (
 
       <p className="text-gray-700 text-sm sm:text-base">
         หากต้องการความช่วยเหลือเพิ่มเติม หรือต้องการเสนอฟีเจอร์ใหม่
-        สามารถติดต่อผู้พัฒนาได้ผ่านหน้า Contact หรือสร้าง issue ใน repository
+        สามารถติดต่อผู้พัฒนาได้ผ่านหน้า Contact หรือสร้าง Issue ใน Repository
       </p>
     </div>
   </div>

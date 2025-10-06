@@ -1,15 +1,14 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 function ArticleSection({ onSearch, onCategoryFilter }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [categories] = useState([
-    { id: 'all', name: 'All Cars' },
-    { id: 'mclaren-720s', name: 'McLaren 720S' },
-    { id: 'mclaren-gts', name: 'McLaren GTS' },
-    { id: 'mclaren-w1', name: 'McLaren W1' },
-    { id: 'urus', name: 'Urus' }
+    { id: "all", name: "All Cars" },
+    { id: "mclaren-720s", name: "McLaren 720S" },
+    { id: "mclaren-gts", name: "McLaren GTS" },
+    { id: "mclaren-w1", name: "McLaren W1" },
+    { id: "urus", name: "Urus" },
   ]);
 
   // Handle search input changes
@@ -49,16 +48,16 @@ function ArticleSection({ onSearch, onCategoryFilter }) {
     <section className="bg-gray-500 rounded-xl container mx-auto px-2 py-4 mb-30">
       <div className="md:flex md:flex-row md:justify-between items-center">
         {/* Desktop Category Tabs */}
-        <div className="hidden md:flex">
-          <div className="flex space-x-2">
+        <div className="hidden md:flex ml-5">
+          <div className="flex space-x-3 ">
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => handleCategoryChange(category.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 cursor-pointer ${
                   selectedCategory === category.id
-                    ? 'bg-white text-gray-800 shadow-md'
-                    : 'bg-gray-600 text-white hover:bg-gray-700'
+                    ? "bg-white text-gray-800 shadow-md"
+                    : "bg-gray-600 text-white hover:bg-gray-700"
                 }`}
               >
                 {category.name}
@@ -68,37 +67,53 @@ function ArticleSection({ onSearch, onCategoryFilter }) {
         </div>
 
         {/* Search Bar */}
-        <div className="md:flex md:flex-row md:justify-center md:items-center md:gap-10">
+        <div className="md:flex md:flex-row md:justify-center md:items-center md:gap-10 mr-5">
           <form onSubmit={handleSearchSubmit} className="relative">
             <label className="input bg-white flex items-center">
-              <svg 
-                className="h-[1em] opacity-50 mr-2" 
-                xmlns="http://www.w3.org/2000/svg" 
+              <svg
+                className="h-[1em] opacity-50 mr-2"
+                xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
               >
-                <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
+                <g
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  strokeWidth="2.5"
+                  fill="none"
+                  stroke="currentColor"
+                >
                   <circle cx="11" cy="11" r="8"></circle>
                   <path d="m21 21-4.3-4.3"></path>
                 </g>
               </svg>
-              <input 
-                type="search" 
+              <input
+                type="search"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                placeholder="Search articles..." 
+                placeholder="Search articles..."
                 className="text-black bg-transparent border-none outline-none flex-1"
               />
               {searchTerm && (
                 <button
                   type="button"
                   onClick={() => {
-                    setSearchTerm('');
-                    if (onSearch) onSearch('');
+                    setSearchTerm("");
+                    if (onSearch) onSearch("");
                   }}
                   className="ml-2 text-gray-400 hover:text-gray-600"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               )}
@@ -108,7 +123,7 @@ function ArticleSection({ onSearch, onCategoryFilter }) {
 
         {/* Mobile Category Dropdown */}
         <div className="md:hidden mt-6 w-full">
-          <select 
+          <select
             value={selectedCategory}
             onChange={handleMobileCategoryChange}
             className="select bg-white text-black w-full"
@@ -133,4 +148,4 @@ function ArticleSection({ onSearch, onCategoryFilter }) {
     </section>
   );
 }
-export default ArticleSection
+export default ArticleSection;
