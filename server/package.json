@@ -1,0 +1,55 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "API backend for Side MyProject (car articles blog)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "migrate:uploads": "node scripts/migrate-uploads-to-cloudinary.js",
+    "test:pg": "vitest run --config vitest.pg.config.js"
+  },
+  "keywords": [
+    "express",
+    "api",
+    "backend"
+  ],
+  "author": "pond",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.11.0",
+    "compression": "^1.8.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^4.22.3",
+    "express-rate-limit": "^7.5.1",
+    "file-type": "^21.3.4",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "nodemailer": "^10.6.0",
+    "pg": "^8.16.3",
+    "pino": "^9.14.0",
+    "pino-http": "^10.5.0",
+    "sanitize-html": "^2.18.2",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "embedded-postgres": "16.15.0-beta.19",
+    "nodemon": "^3.1.14",
+    "pg-mem": "^3.0.14",
+    "pino-pretty": "^11.3.0",
+    "supertest": "^7.3.2",
+    "vitest": "^2.1.9"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

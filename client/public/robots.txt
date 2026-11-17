@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /profile
+Disallow: /notifications
+Disallow: /reset-password
+
+# TODO(redesign): replace placeholder domain with the production URL
+Sitemap: https://apex.example.com/sitemap.xml

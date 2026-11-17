@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en" data-theme="apex-dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>APEX — Performance cars, read closely</title>
+    <meta
+      name="description"
+      content="APEX is an independent magazine about performance cars: long-form reviews, sharp news and spec-sheet comparisons."
+    />
+    <meta name="theme-color" content="#0b0b0c" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f5f3ee" media="(prefers-color-scheme: light)" />
+    <meta name="color-scheme" content="dark light" />
+
+    <!-- Theme before first paint (no flash): stored choice → OS preference → dark -->
+    <script>
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem("apex-theme");
+        } catch (e) {}
+        if (t !== "apex-light" && t !== "apex-dark") {
+          t = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "apex-light" : "apex-dark";
+        }
+        document.documentElement.setAttribute("data-theme", t);
+      })();
+    </script>
+
+    <!-- Boot data (kept above every stylesheet: an inline script after a <link rel=stylesheet> waits
+         for that CSS, which would delay these requests): start the API request(s) for the landing route and preload its cover image while
+         the app bundle is still downloading. The app takes these responses via src/lib/prefetch.js.
+         Image choice mirrors src/lib/image.js (coverOf + responsiveImage, sizes=100vw); the photo
+         manifest is injected at build time by vite.config.js. Signed-in sessions skip this. -->
+    <script>
+      (function () {
+        if ("%MODE%" === "development" || !window.fetch) return;
+        try {
+          if (localStorage.getItem("token")) return;
+        } catch (e) {}
+        var api = "%VITE_API_URL%";
+        if (api.charAt(0) === "%") api = "";
+        api = api.replace(/\/+$/, "");
+        var path = location.pathname.replace(/\/+$/, "") || "/";
+        var keys = [];
+        var m = /^\/articles\/([^/]+)$/.exec(path);
+        if (path === "/") keys = ["/articles?limit=1&offset=0&sort=latest&featured=true", "/articles?limit=14&offset=0&sort=latest"];
+        else if (m) {
+          try {
+            keys = ["/articles/" + encodeURIComponent(decodeURIComponent(m[1]))];
+          } catch (e) {}
+        }
+        if (!keys.length) return;
+        if (api) {
+          var pc = document.createElement("link");
+          pc.rel = "preconnect";
+          pc.href = api;
+          pc.crossOrigin = "anonymous";
+          document.head.appendChild(pc);
+        }
+        var store = (window.__APEX_PREFETCH__ = {});
+        // The app entry (see vite.config.js) waits for this, at most ~1.2 s: until the early cover
+        // photo has painted, or as soon as it is clear there will be none.
+        var releaseWait;
+        window.__APEX_BOOT_WAIT__ = new Promise(function (r) {
+          releaseWait = r;
+        });
+        var get = function (k) {
+          var p = fetch(api + "/api" + k).then(function (r) {
+            if (!r.ok || (r.headers.get("content-type") || "").indexOf("json") < 0) throw new Error("prefetch failed");
+            return r.json();
+          });
+          p.catch(function () {});
+          store[k] = { at: Date.now(), promise: p };
+          return p;
+        };
+        var LOCAL = __APEX_LOCAL_IMAGES__;
+        var BY_MAKE = { mclaren: ["redmc", "gtsmc", "mc_engin", "mc_homepage"], lamborghini: ["urus", "aventador"], "mercedes-amg": ["amg"], mercedes: ["amg"], amg: ["amg"], bmw: ["bmw"] };
+        var WIDTHS = [480, 768, 1080, 1440, 1920];
+        var hash = function (s) {
+          var h = 0x811c9dc5;
+          for (var i = 0; i < s.length; i++) {
+            h ^= s.charCodeAt(i);
+            h = Math.imul(h, 0x01000193);
+          }
+          return h >>> 0;
+        };
+        var coverPath = function (a) {
+          if (a.featured_image_url) return a.featured_image_url;
+          var key = String(a.id != null ? a.id : a.slug || a.title || "");
+          var pool = (BY_MAKE[String(a.make || "").trim().toLowerCase()] || []).filter(function (n) {
+            return LOCAL[n];
+          });
+          var choices = pool.length ? pool : Object.keys(LOCAL);
+          return choices.length ? "/img/" + choices[hash(key) % choices.length] + ".jpg" : "/img/mc_homepage.jpg";
+        };
+        // Paint the cover photo straight away, before the app bundle has run, in a layer with the
+        // exact box of the React hero (CoverStory: 90vh/min 560px, ArticleHero: 86vh/min 520px).
+        // The hero removes it once its own <img> (same URL, already cached) has loaded
+        // (src/lib/bootHero.js), so the photo never flashes and nothing below it moves.
+        var bootHero = function (href, srcset) {
+          var home = path === "/";
+          var show = function () {
+            if (document.getElementById("boot-hero")) return;
+            var box = document.createElement("div");
+            box.id = "boot-hero";
+            box.setAttribute("aria-hidden", "true");
+            box.style.cssText =
+              "position:absolute;top:0;left:0;right:0;z-index:40;overflow:hidden;pointer-events:none;background:#0b0b0c;height:" +
+              (home ? "90vh;min-height:560px" : "86vh;min-height:520px");
+            var img = document.createElement("img");
+            img.alt = "";
+            img.decoding = "async";
+            img.setAttribute("fetchpriority", "high");
+            if (srcset) {
+              img.srcset = srcset;
+              img.sizes = "100vw";
+            }
+            img.onload = img.onerror = function () {
+              requestAnimationFrame(function () {
+                setTimeout(releaseWait, 0);
+              });
+            };
+            img.src = href;
+            img.style.cssText = "width:100%;height:100%;object-fit:cover;transform:scale(" + (home ? "1.14" : "1.08") + ")";
+            box.appendChild(img);
+            document.body.insertBefore(box, document.body.firstChild);
+          };
+          if (document.body) show();
+          else document.addEventListener("DOMContentLoaded", show, { once: true });
+        };
+        var preload = function (url) {
+          var href = url, srcset = "";
+          var lm = /^\/img\/([a-z0-9_-]+)\.jpe?g$/i.exec(url);
+          var cm = /^(https?:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.*)$/i.exec(url);
+          if (lm && LOCAL[lm[1]]) {
+            var w = LOCAL[lm[1]].widths;
+            var pick = w.filter(function (x) { return x >= 1920; })[0] || w[w.length - 1];
+            href = "/img/opt/" + lm[1] + "-" + pick + ".webp";
+            srcset = w.map(function (x) { return "/img/opt/" + lm[1] + "-" + x + ".webp " + x + "w"; }).join(", ");
+          } else if (cm) {
+            var rest = cm[2].replace(/^([a-z]{1,3}_[^/]*,?)+\//i, "");
+            var cl = function (x) { return cm[1] + "f_auto,q_auto,c_limit,w_" + x + "/" + rest; };
+            href = cl(1920);
+            srcset = WIDTHS.map(function (x) { return cl(x) + " " + x + "w"; }).join(", ");
+          } else if (!/^(https?:)?\/\//i.test(url) && !/^(data|blob):/i.test(url)) {
+            href = (/^\/(img\/|favicon|og-)/.test(url) ? "" : api) + (url.charAt(0) === "/" ? url : "/" + url);
+          }
+          var l = document.createElement("link");
+          l.rel = "preload";
+          l.as = "image";
+          l.href = href;
+          if (srcset) {
+            l.setAttribute("imagesrcset", srcset);
+            l.setAttribute("imagesizes", "100vw");
+          }
+          l.setAttribute("fetchpriority", "high");
+          document.head.appendChild(l);
+          bootHero(href, srcset);
+        };
+        if (path === "/") {
+          // Cover = the featured story, else the newest one (HomePage). Preload as soon as known.
+          var latest = get(keys[1]);
+          get(keys[0])
+            .then(function (r) {
+              return (r.articles || []).filter(function (a) { return a.is_featured; })[0];
+            }, function () {})
+            .then(function (feat) {
+              if (feat) return preload(coverPath(feat));
+              return latest.then(function (r) {
+                var first = (r.articles || [])[0];
+                if (first) preload(coverPath(first));
+                else releaseWait();
+              });
+            })
+            .catch(releaseWait);
+        } else {
+          var chunks = __APEX_ROUTE_CHUNKS__.article || [];
+          for (var ci = 0; ci < chunks.length; ci++) {
+            var mp = document.createElement("link");
+            mp.rel = "modulepreload";
+            mp.href = chunks[ci];
+            document.head.appendChild(mp);
+          }
+          get(keys[0])
+            .then(function (r) {
+              if (r && r.data) preload(coverPath(r.data));
+              else releaseWait();
+            })
+            .catch(releaseWait);
+        }
+      })();
+    </script>
+    <link rel="icon" type="image/png" href="/logo/porsche-crest-192.png" />
+    <link rel="apple-touch-icon" href="/logo/porsche-crest-192.png" />
+    <!-- TODO(redesign): replace placeholder domain with the production URL -->
+    <link rel="canonical" href="https://apex.example.com/" />
+
+    <!-- Fonts: only the axes/weights the UI uses.
+         - Archivo (display face: hero headlines) is render-blocking but display=optional: it is used
+           when it arrives within the short block period and is never swapped in later, so the
+           bottom-anchored hero text cannot jump (article CLS).
+         - Inter / Newsreader / JetBrains Mono are not needed for the first paint: their stylesheet is
+           added after the load event (display=swap) and text first renders in the metric-matched
+           local fallbacks from index.css, so they do not compete with the JS and the LCP image. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,600..800&display=optional"
+    />
+    <script>
+      (function () {
+        var href =
+          "https://fonts.googleapis.com/css2?family=Inter:wght@400..600&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400..600;1,400&display=swap";
+        var add = function () {
+          var l = document.createElement("link");
+          l.rel = "stylesheet";
+          l.href = href;
+          document.head.appendChild(l);
+        };
+        if (document.readyState === "complete") add();
+        else window.addEventListener("load", add, { once: true });
+      })();
+    </script>
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400..600&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400..600;1,400&display=swap"
+      />
+    </noscript>
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="APEX" />
+    <meta property="og:title" content="APEX — Performance cars, read closely" />
+    <meta
+      property="og:description"
+      content="APEX is an independent magazine about performance cars: long-form reviews, sharp news and spec-sheet comparisons."
+    />
+    <meta property="og:url" content="https://apex.example.com/" />
+    <meta property="og:image" content="https://apex.example.com/img/redmc.jpg" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="APEX — Performance cars, read closely" />
+    <meta
+      name="twitter:description"
+      content="APEX is an independent magazine about performance cars: long-form reviews, sharp news and spec-sheet comparisons."
+    />
+    <meta name="twitter:image" content="https://apex.example.com/img/redmc.jpg" />
+  </head>
+  <body>
+    <noscript>APEX needs JavaScript enabled to show articles.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
