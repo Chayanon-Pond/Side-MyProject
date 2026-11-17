@@ -1,286 +1,163 @@
-import connectionPool from '../../utils/database.js';
+import pool from '../../db/pool.js';
+import { AppError } from '../../lib/errors.js';
 import { createNotificationHelper } from '../notifications/notifications-handlers.js';
+import logger from '../../lib/logger.js';
 
-// Get comments for an article
+// Explicit columns: user email is never selected for public comment payloads.
+const COMMENT_COLUMNS = `
+  c.id, c.content, c.parent_id, c.status, c.created_at, c.updated_at,
+  u.id AS user_id, u.full_name AS user_name, u.username AS user_username,
+  u.profile_image_url AS user_avatar`;
+
+// GET /api/comments/article/:articleId
+// Pagination applies to top-level comments (newest first); every approved reply below a
+// returned comment is attached, so a page never shows a reply without its parent.
+// pagination.total counts top-level comments (what "load more" pages over);
+// total_comments counts every approved comment including replies (what the UI shows).
 export const getCommentsByArticle = async (req, res) => {
-  try {
-    const { articleId } = req.params;
-    const { limit = 20, offset = 0 } = req.query;
+  const { articleId } = req.params;
+  const { limit, offset } = req.query;
 
-    // Get comments with user information
-    const query = `
-      SELECT 
-        c.id,
-        c.content,
-        c.parent_id,
-        c.status,
-        c.created_at,
-        c.updated_at,
-        u.id as user_id,
-        u.full_name as user_name,
-        u.username as user_username,
-        u.email as user_email
-      FROM comments c
-      LEFT JOIN users u ON c.user_id = u.id
-      WHERE c.article_id = $1 AND c.status = 'approved'
-      ORDER BY c.created_at DESC
-      LIMIT $2 OFFSET $3
-    `;
+  const [top, replies, count] = await Promise.all([
+    pool.query(
+      `SELECT ${COMMENT_COLUMNS}
+       FROM comments c
+       LEFT JOIN users u ON c.user_id = u.id
+       WHERE c.article_id = $1 AND c.status = 'approved' AND c.parent_id IS NULL
+       ORDER BY c.created_at DESC, c.id DESC
+       LIMIT $2 OFFSET $3`,
+      [articleId, limit, offset],
+    ),
+    pool.query(
+      `SELECT ${COMMENT_COLUMNS}
+       FROM comments c
+       LEFT JOIN users u ON c.user_id = u.id
+       WHERE c.article_id = $1 AND c.status = 'approved' AND c.parent_id IS NOT NULL
+       ORDER BY c.created_at ASC, c.id ASC`,
+      [articleId],
+    ),
+    pool.query(
+      `SELECT COUNT(*) AS all_total,
+              SUM(CASE WHEN parent_id IS NULL THEN 1 ELSE 0 END) AS top_total
+       FROM comments WHERE article_id = $1 AND status = 'approved'`,
+      [articleId],
+    ),
+  ]);
+  const total = parseInt(count.rows[0].top_total ?? 0, 10) || 0;
+  const totalComments = parseInt(count.rows[0].all_total, 10);
 
-    const result = await connectionPool.query(query, [articleId, limit, offset]);
-
-    // Get total count
-    const countQuery = 'SELECT COUNT(*) as total FROM comments WHERE article_id = $1 AND status = $2';
-    const countResult = await connectionPool.query(countQuery, [articleId, 'approved']);
-    const total = parseInt(countResult.rows[0].total);
-
-    // Organize comments by parent/child structure
-    const comments = result.rows;
-    const commentMap = new Map();
-    const topLevelComments = [];
-
-    // First pass: create all comment objects
-    comments.forEach(comment => {
-      commentMap.set(comment.id, {
-        ...comment,
-        replies: []
-      });
-    });
-
-    // Second pass: organize hierarchy
-    comments.forEach(comment => {
-      if (comment.parent_id) {
-        // This is a reply
-        const parent = commentMap.get(comment.parent_id);
-        if (parent) {
-          parent.replies.push(commentMap.get(comment.id));
-        }
-      } else {
-        // This is a top-level comment
-        topLevelComments.push(commentMap.get(comment.id));
+  const byId = new Map();
+  const topLevel = top.rows.map((c) => {
+    const node = { ...c, replies: [] };
+    byId.set(c.id, node);
+    return node;
+  });
+  // Replies may nest; attach each to its parent once the parent is known.
+  let pending = replies.rows;
+  while (pending.length) {
+    const next = [];
+    for (const c of pending) {
+      const parent = byId.get(c.parent_id);
+      if (!parent) {
+        next.push(c);
+        continue;
       }
-    });
-
-    res.json({
-      comments: topLevelComments,
-      pagination: {
-        total,
-        limit: parseInt(limit),
-        offset: parseInt(offset),
-        pages: Math.ceil(total / limit),
-        currentPage: Math.floor(offset / limit) + 1
-      }
-    });
-  } catch (error) {
-    console.error('Get comments error:', error);
-    res.status(500).json({ error: 'Failed to fetch comments' });
+      const node = { ...c, replies: [] };
+      byId.set(c.id, node);
+      parent.replies.push(node);
+    }
+    if (next.length === pending.length) break; // remaining replies belong to other pages
+    pending = next;
   }
+
+  const pages = Math.ceil(total / limit);
+  res.json({
+    comments: topLevel,
+    total_comments: totalComments,
+    pagination: { total, limit, offset, pages, totalPages: pages, currentPage: Math.floor(offset / limit) + 1 },
+  });
 };
 
-// Create a new comment
+// POST /api/comments/article/:articleId
 export const createComment = async (req, res) => {
-  try {
-    const { articleId } = req.params;
-    const { content, parent_id = null } = req.body;
-    const userId = req.user?.id; // From auth middleware
+  const { articleId } = req.params;
+  const { content, parent_id } = req.body;
+  const userId = req.user.id;
 
-    console.log('Create comment request:');
-    console.log('- Article ID:', articleId);
-    console.log('- User from req:', req.user);
-    console.log('- User ID:', userId);
-    console.log('- Content:', content);
+  const article = await pool.query(
+    "SELECT id, author_id, title, slug FROM articles WHERE id = $1 AND status = 'published'",
+    [articleId],
+  );
+  if (article.rows.length === 0) throw AppError.notFound('Article not found');
+  const articleInfo = article.rows[0];
 
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
-
-    if (!content || content.trim().length === 0) {
-      return res.status(400).json({ error: 'Comment content is required' });
-    }
-
-    if (content.length > 1000) {
-      return res.status(400).json({ error: 'Comment is too long (max 1000 characters)' });
-    }
-
-    // Check if article exists
-    const articleCheck = await connectionPool.query(
-      'SELECT id FROM articles WHERE id = $1 AND status = $2',
-      [articleId, 'published']
-    );
-
-    if (articleCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Article not found' });
-    }
-
-    // If parent_id is provided, check if parent comment exists
-    if (parent_id) {
-      const parentCheck = await connectionPool.query(
-        'SELECT id FROM comments WHERE id = $1 AND article_id = $2',
-        [parent_id, articleId]
-      );
-
-      if (parentCheck.rows.length === 0) {
-        return res.status(404).json({ error: 'Parent comment not found' });
-      }
-    }
-
-    // Insert new comment
-    const insertQuery = `
-      INSERT INTO comments (article_id, user_id, parent_id, content, status)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
-    `;
-
-    const result = await connectionPool.query(insertQuery, [
-      articleId,
-      userId,
-      parent_id,
-      content.trim(),
-      'approved' // Auto-approve for now, can be changed to 'pending' for moderation
-    ]);
-
-  // Get the comment with user information
-    const commentQuery = `
-      SELECT 
-        c.id,
-        c.content,
-        c.parent_id,
-        c.status,
-        c.created_at,
-        c.updated_at,
-        u.id as user_id,
-        u.full_name as user_name,
-        u.username as user_username
-      FROM comments c
-      LEFT JOIN users u ON c.user_id = u.id
-      WHERE c.id = $1
-    `;
-
-    const commentResult = await connectionPool.query(commentQuery, [result.rows[0].id]);
-
-    // Notify article author (skip if author comments on own article)
-    try {
-      const owner = await connectionPool.query('SELECT author_id, title, slug FROM articles WHERE id = $1', [articleId]);
-      const articleInfo = owner.rows[0];
-      if (articleInfo) {
-        const authorId = articleInfo.author_id;
-        if (authorId && authorId !== userId) {
-          await createNotificationHelper(
-            authorId,
-            'comment',
-            'New comment on your article',
-            `${commentResult.rows[0].user_username || 'Someone'} commented on "${articleInfo.title}"`,
-            { article_id: Number(articleId), comment_id: result.rows[0].id, slug: articleInfo.slug, sender_id: userId }
-          );
-        }
-
-        // If this is a reply, also notify parent comment owner (avoid duplicate/author/self)
-        if (parent_id) {
-          const parentOwner = await connectionPool.query(
-            'SELECT user_id FROM comments WHERE id = $1',
-            [parent_id]
-          );
-          const parentUserId = parentOwner.rows[0]?.user_id;
-          if (parentUserId && parentUserId !== userId && parentUserId !== authorId) {
-            await createNotificationHelper(
-              parentUserId,
-              'comment',
-              'New reply to your comment',
-              `${commentResult.rows[0].user_username || 'Someone'} replied to your comment on "${articleInfo.title}"`,
-              { article_id: Number(articleId), comment_id: result.rows[0].id, parent_id, slug: articleInfo.slug, sender_id: userId }
-            );
-          }
-        }
-      }
-    } catch (notifyErr) {
-      console.warn('Comment notification failed:', notifyErr?.message || notifyErr);
-    }
-
-    res.status(201).json({
-      message: 'Comment created successfully',
-      comment: commentResult.rows[0]
-    });
-  } catch (error) {
-    console.error('Create comment error:', error);
-    res.status(500).json({ error: 'Failed to create comment' });
+  let parentUserId = null;
+  if (parent_id) {
+    const parent = await pool.query('SELECT id, user_id FROM comments WHERE id = $1 AND article_id = $2', [parent_id, articleId]);
+    if (parent.rows.length === 0) throw AppError.notFound('Parent comment not found');
+    parentUserId = parent.rows[0].user_id;
   }
+
+  const inserted = await pool.query(
+    `INSERT INTO comments (article_id, user_id, parent_id, content, status)
+     VALUES ($1, $2, $3, $4, 'approved') RETURNING id`,
+    [articleId, userId, parent_id ?? null, content],
+  );
+  const commentId = inserted.rows[0].id;
+  const comment = (await pool.query(
+    `SELECT ${COMMENT_COLUMNS} FROM comments c LEFT JOIN users u ON c.user_id = u.id WHERE c.id = $1`,
+    [commentId],
+  )).rows[0];
+
+  // Best-effort notifications (never fail the request).
+  try {
+    const who = comment.user_username || 'Someone';
+    const authorId = articleInfo.author_id;
+    if (authorId && authorId !== userId) {
+      await createNotificationHelper(authorId, 'comment', 'New comment on your article',
+        `${who} commented on "${articleInfo.title}"`,
+        { article_id: articleInfo.id, comment_id: commentId, slug: articleInfo.slug, sender_id: userId });
+    }
+    if (parentUserId && parentUserId !== userId && parentUserId !== authorId) {
+      await createNotificationHelper(parentUserId, 'comment', 'New reply to your comment',
+        `${who} replied to your comment on "${articleInfo.title}"`,
+        { article_id: articleInfo.id, comment_id: commentId, parent_id, slug: articleInfo.slug, sender_id: userId });
+    }
+  } catch (err) {
+    logger.warn({ err: { message: err?.message }, commentId }, 'Comment notification failed');
+  }
+
+  logger.info({ userId, articleId: articleInfo.id, commentId }, 'Comment created');
+  res.status(201).json({ message: 'Comment created successfully', comment });
 };
 
-// Update a comment (only by the author)
+async function loadOwnedComment(commentId, req, action) {
+  const r = await pool.query('SELECT id, user_id FROM comments WHERE id = $1', [commentId]);
+  if (r.rows.length === 0) throw AppError.notFound('Comment not found');
+  const isOwner = r.rows[0].user_id === req.user.id;
+  // Admins may delete (moderate) any comment; only owners may edit.
+  if (!isOwner && !(action === 'delete' && req.user.role === 'admin')) {
+    throw AppError.forbidden(`You can only ${action} your own comments`, 'NOT_OWNER');
+  }
+  return r.rows[0];
+}
+
+// PUT /api/comments/:commentId
 export const updateComment = async (req, res) => {
-  try {
-    const { commentId } = req.params;
-    const { content } = req.body;
-    const userId = req.user.id;
-
-    if (!content || content.trim().length === 0) {
-      return res.status(400).json({ error: 'Comment content is required' });
-    }
-
-    if (content.length > 1000) {
-      return res.status(400).json({ error: 'Comment is too long (max 1000 characters)' });
-    }
-
-    // Check if comment exists and belongs to the user
-    const commentCheck = await connectionPool.query(
-      'SELECT id, user_id FROM comments WHERE id = $1',
-      [commentId]
-    );
-
-    if (commentCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Comment not found' });
-    }
-
-    if (commentCheck.rows[0].user_id !== userId) {
-      return res.status(403).json({ error: 'You can only edit your own comments' });
-    }
-
-    // Update comment
-    const updateQuery = `
-      UPDATE comments 
-      SET content = $1, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $2
-      RETURNING *
-    `;
-
-    const result = await connectionPool.query(updateQuery, [content.trim(), commentId]);
-
-    res.json({
-      message: 'Comment updated successfully',
-      comment: result.rows[0]
-    });
-  } catch (error) {
-    console.error('Update comment error:', error);
-    res.status(500).json({ error: 'Failed to update comment' });
-  }
+  const { commentId } = req.params;
+  await loadOwnedComment(commentId, req, 'edit');
+  const result = await pool.query(
+    `UPDATE comments SET content = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2
+     RETURNING id, article_id, user_id, parent_id, content, status, created_at, updated_at`,
+    [req.body.content, commentId],
+  );
+  res.json({ message: 'Comment updated successfully', comment: result.rows[0] });
 };
 
-// Delete a comment (only by the author)
+// DELETE /api/comments/:commentId
 export const deleteComment = async (req, res) => {
-  try {
-    const { commentId } = req.params;
-    const userId = req.user.id;
-
-    // Check if comment exists and belongs to the user
-    const commentCheck = await connectionPool.query(
-      'SELECT id, user_id FROM comments WHERE id = $1',
-      [commentId]
-    );
-
-    if (commentCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Comment not found' });
-    }
-
-    if (commentCheck.rows[0].user_id !== userId) {
-      return res.status(403).json({ error: 'You can only delete your own comments' });
-    }
-
-    // Delete comment (cascade will handle replies)
-    await connectionPool.query('DELETE FROM comments WHERE id = $1', [commentId]);
-
-    res.json({ message: 'Comment deleted successfully' });
-  } catch (error) {
-    console.error('Delete comment error:', error);
-    res.status(500).json({ error: 'Failed to delete comment' });
-  }
+  const { commentId } = req.params;
+  await loadOwnedComment(commentId, req, 'delete');
+  await pool.query('DELETE FROM comments WHERE id = $1', [commentId]);
+  res.json({ message: 'Comment deleted successfully' });
 };

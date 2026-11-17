@@ -1,212 +1,90 @@
-import connectionPool from '../../utils/database.js';
+import pool from '../../db/pool.js';
+import { AppError } from '../../lib/errors.js';
+import logger from '../../lib/logger.js';
 
-// Get notifications for the authenticated user
+export const NOTIFICATION_TYPES = ['comment', 'like', 'article_published', 'mention', 'system'];
+
+const ACTION_TEXT = {
+  comment: 'commented on the article you have commented on.',
+  article_published: 'published new article.',
+  like: 'liked your comment.',
+};
+
+// GET /api/notifications
 export const getNotifications = async (req, res) => {
-  try {
-  const userId = req.user.id; // Changed from req.user.userId
-  const { filter = 'all', limit = 50, offset = 0 } = req.query;
-  const limitNum = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 100);
-  const offsetNum = Math.max(parseInt(offset, 10) || 0, 0);
+  const userId = req.user.id;
+  const { filter, limit, offset } = req.query;
 
-    let query = `
-      SELECT 
-        n.id,
-        n.type,
-        n.title,
-        n.message,
-        n.data,
-        n.is_read,
-        n.created_at,
-        n.updated_at,
-        u.full_name as sender_name,
-        u.profile_image_url as sender_avatar
-  FROM notifications n
-  /*
-    Join sender info safely:
-    - Cast u.id to text to avoid failing when sender_id is missing/empty
-    - Use ->> on JSON/JSONB; COALESCE to empty string keeps join safe
-  */
-  LEFT JOIN users u ON COALESCE(n.data->>'sender_id','') = u.id::text
-      WHERE n.user_id = $1
-    `;
+  let sql = `
+    SELECT n.id, n.type, n.title, n.message, n.data, n.is_read, n.created_at, n.updated_at,
+           u.full_name AS sender_name, u.profile_image_url AS sender_avatar
+    FROM notifications n
+    LEFT JOIN users u ON COALESCE(n.data->>'sender_id', '') = u.id::text
+    WHERE n.user_id = $1`;
+  if (filter === 'unread') sql += ' AND n.is_read = false';
+  else if (filter === 'read') sql += ' AND n.is_read = true';
+  sql += ' ORDER BY n.created_at DESC LIMIT $2 OFFSET $3';
 
-    const params = [userId];
-    let paramCount = 1;
+  const [result, unread] = await Promise.all([
+    pool.query(sql, [userId, limit, offset]),
+    pool.query('SELECT COUNT(*) AS unread_count FROM notifications WHERE user_id = $1 AND is_read = false', [userId]),
+  ]);
 
-    // Apply filter
-    if (filter === 'unread') {
-      query += ` AND n.is_read = false`;
-    } else if (filter === 'read') {
-      query += ` AND n.is_read = true`;
-    }
-
-    // Add ordering and pagination
-  query += ` ORDER BY n.created_at DESC`;
-    
-  paramCount++;
-  query += ` LIMIT $${paramCount}`;
-  params.push(limitNum);
-    
-  paramCount++;
-  query += ` OFFSET $${paramCount}`;
-  params.push(offsetNum);
-
-    const result = await connectionPool.query(query, params);
-
-    // Get unread count
-    const unreadCountResult = await connectionPool.query(
-      'SELECT COUNT(*) as unread_count FROM notifications WHERE user_id = $1 AND is_read = false',
-      [userId]
-    );
-
-    // Process notifications to add action text
-    const notifications = result.rows.map(notification => {
-      let action = '';
-      switch (notification.type) {
-        case 'comment':
-          action = 'commented on the article you have commented on.';
-          break;
-        case 'article_published':
-          action = 'published new article.';
-          break;
-        case 'like':
-          action = 'liked your comment.';
-          break;
-        default:
-          action = notification.title;
-      }
-      
-      return {
-        ...notification,
-        action
-      };
-    });
-
-    res.json({
-      notifications,
-      unreadCount: parseInt(unreadCountResult.rows[0].unread_count),
-      total: result.rows.length
-    });
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
+  const notifications = result.rows.map((n) => ({ ...n, action: ACTION_TEXT[n.type] || n.title }));
+  res.json({
+    notifications,
+    unreadCount: parseInt(unread.rows[0].unread_count, 10),
+    total: notifications.length,
+  });
 };
 
-// Mark a specific notification as read
+// PUT /api/notifications/:id/read
 export const markNotificationAsRead = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id; // Changed from req.user.userId
-
-    const result = await connectionPool.query(
-      'UPDATE notifications SET is_read = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 RETURNING *',
-      [id, userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Notification not found' });
-    }
-
-    res.json({
-      message: 'Notification marked as read',
-      notification: result.rows[0]
-    });
-
-  } catch (error) {
-    console.error('Mark notification as read error:', error);
-    res.status(500).json({ error: 'Failed to mark notification as read' });
-  }
+  const result = await pool.query(
+    'UPDATE notifications SET is_read = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 RETURNING *',
+    [req.params.id, req.user.id],
+  );
+  if (result.rows.length === 0) throw AppError.notFound('Notification not found');
+  res.json({ message: 'Notification marked as read', notification: result.rows[0] });
 };
 
-// Mark all notifications as read for the user
+// PUT /api/notifications/mark-all-read
 export const markAllNotificationsAsRead = async (req, res) => {
-  try {
-    const userId = req.user.id; // Changed from req.user.userId
-
-    await connectionPool.query(
-      'UPDATE notifications SET is_read = true, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND is_read = false',
-      [userId]
-    );
-
-    res.json({ message: 'All notifications marked as read' });
-
-  } catch (error) {
-    console.error('Mark all notifications as read error:', error);
-    res.status(500).json({ error: 'Failed to mark all notifications as read' });
-  }
+  await pool.query(
+    'UPDATE notifications SET is_read = true, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND is_read = false',
+    [req.user.id],
+  );
+  res.json({ message: 'All notifications marked as read' });
 };
 
-// Delete a notification
+// DELETE /api/notifications/:id  (owner only; someone else's id -> 404, no existence leak)
 export const deleteNotification = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id; // Changed from req.user.userId
-
-    const result = await connectionPool.query(
-      'DELETE FROM notifications WHERE id = $1 AND user_id = $2 RETURNING id',
-      [id, userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Notification not found' });
-    }
-
-    res.json({ message: 'Notification deleted successfully' });
-
-  } catch (error) {
-    console.error('Delete notification error:', error);
-    res.status(500).json({ error: 'Failed to delete notification' });
-  }
+  const result = await pool.query('DELETE FROM notifications WHERE id = $1 AND user_id = $2 RETURNING id', [req.params.id, req.user.id]);
+  if (result.rows.length === 0) throw AppError.notFound('Notification not found');
+  res.json({ message: 'Notification deleted successfully', deletedId: result.rows[0].id });
 };
 
-// Create a new notification (for system use)
+// POST /api/notifications  (admin)
 export const createNotification = async (req, res) => {
-  try {
-    const { user_id, type, title, message, data } = req.body;
-
-    // Validate required fields
-    if (!user_id || !type || !title || !message) {
-      return res.status(400).json({ 
-        error: 'user_id, type, title, and message are required' 
-      });
-    }
-
-    // Validate type
-    const validTypes = ['comment', 'like', 'article_published', 'mention', 'system'];
-    if (!validTypes.includes(type)) {
-      return res.status(400).json({ 
-        error: 'Invalid notification type' 
-      });
-    }
-
-    const result = await connectionPool.query(
-      `INSERT INTO notifications (user_id, type, title, message, data) 
-       VALUES ($1, $2, $3, $4, $5) 
-       RETURNING *`,
-      [user_id, type, title, message, data ? JSON.stringify(data) : null]
-    );
-
-    res.status(201).json({
-      message: 'Notification created successfully',
-      notification: result.rows[0]
-    });
-
-  } catch (error) {
-    console.error('Create notification error:', error);
-    res.status(500).json({ error: 'Failed to create notification' });
-  }
+  const { user_id, type, title, message, data } = req.body;
+  const user = await pool.query('SELECT id FROM users WHERE id = $1', [user_id]);
+  if (user.rows.length === 0) throw AppError.badRequest('Target user does not exist', 'INVALID_USER');
+  const result = await pool.query(
+    `INSERT INTO notifications (user_id, type, title, message, data)
+     VALUES ($1, $2, $3, $4, $5::jsonb) RETURNING *`,
+    [user_id, type, title, message, JSON.stringify({ ...(data || {}), sender_id: req.user.id })],
+  );
+  res.status(201).json({ message: 'Notification created successfully', notification: result.rows[0] });
 };
 
-// Helper function to create notifications (can be used by other parts of the app)
+/** Internal helper used by other modules. Never throws. */
 export const createNotificationHelper = async (userId, type, title, message, data = null) => {
   try {
-    await connectionPool.query(
-      `INSERT INTO notifications (user_id, type, title, message, data) 
-       VALUES ($1, $2, $3, $4, $5)`,
-      [userId, type, title, message, data ? JSON.stringify(data) : null]
+    await pool.query(
+      'INSERT INTO notifications (user_id, type, title, message, data) VALUES ($1, $2, $3, $4, $5::jsonb)',
+      [userId, type, title, message, JSON.stringify(data || {})],
     );
-  } catch (error) {
-    console.error('Create notification helper error:', error);
+  } catch (err) {
+    logger.warn({ err: { message: err?.message }, type }, 'Create notification helper failed');
   }
 };
