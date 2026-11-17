@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowUp, Github, Instagram, Youtube, Twitter } from "lucide-react";
-import Wordmark from "../components/brand/Wordmark";
+import { ApexLetters } from "../components/brand/Wordmark";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import NewsletterForm from "../features/newsletter/NewsletterForm";
 import { useMakes } from "../hooks/useMakes";
@@ -96,7 +96,7 @@ export default function Footer() {
       </div>
 
       <div className="shell overflow-hidden">
-        <Wordmark className="h-auto w-full text-fg opacity-[0.06]" title="" />
+        <ApexLetters className="h-auto w-full text-fg opacity-[0.06]" title="" />
       </div>
 
       <div className="border-t border-line">
