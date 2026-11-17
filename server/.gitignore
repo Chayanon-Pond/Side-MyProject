@@ -2,5 +2,5 @@
 node_modules/
 .env
 # Local image uploads (use Cloudinary or a Railway Volume in production)
-uploads/
+/uploads/
 coverage/
