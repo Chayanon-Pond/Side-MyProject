@@ -1,0 +1,8 @@
+/** Geometry of the APEX wordmark (viewBox 0 0 144 40). */
+export const WORDMARK_PATHS = {
+  a: "M0 36 13.5 4h11L38 36h-8.4L19 11.4 8.4 36z",
+  p: "M44 4h20c6.7 0 10 3.5 10 10.5S70.7 25 64 25H52.5v11H44zm8.5 7v7H63c2 0 3-1.2 3-3.5S65 11 63 11z",
+  e: "M80 4h26v7H88.5v5.6H103v6.8H88.5V29H106v7H80z",
+  x: "M110 4h9.6l7.4 10.6L134.4 4h9.6l-12 16 12 16h-9.6L127 25.4 119.6 36H110l12-16z",
+  bar: "M2 29.5h25.5l2.5-5H4.5z",
+};
