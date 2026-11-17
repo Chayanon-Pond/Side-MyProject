@@ -205,6 +205,34 @@
    Base
    ========================================================================== */
 @layer base {
+  /* Tailwind 4 resets buttons to cursor: default; anything clickable shows the hand, disabled shows not-allowed */
+  button,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  summary,
+  select,
+  label[for],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="submit"],
+  input[type="reset"],
+  input[type="button"],
+  input[type="range"],
+  input[type="color"] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"],
+  select:disabled,
+  input:disabled {
+    cursor: not-allowed;
+  }
+
   *,
   ::before,
   ::after,
@@ -226,6 +254,8 @@
     background: var(--bg);
     color: var(--text);
     font-feature-settings: "cv11", "ss01";
+    /* safety net: nothing may push the page sideways (clip keeps position: sticky working, unlike hidden) */
+    overflow-x: clip;
   }
 
   ::selection {
@@ -580,7 +610,7 @@
 .apex-prose > * + * {
   margin-top: 1.4em;
 }
-.apex-prose > p:first-of-type::first-letter {
+.apex-prose:not(.no-dropcap) > p:first-of-type::first-letter {
   float: left;
   font-family: var(--font-display);
   font-stretch: 125%;
@@ -715,13 +745,18 @@
   padding: 0.1em 0.35em;
   border-radius: 2px;
 }
-/* Breakouts: wider than the 680px column on large screens */
+/* Breakouts: wider than the 680px column on large screens (1280+: at 1024 the -120px pushed past the viewport) */
 @media (min-width: 1024px) {
   .apex-prose .align-wide {
-    margin-inline: -120px;
+    margin-inline: 0;
   }
   .apex-prose .align-full {
     margin-inline: calc(50% - 50vw + 8px);
+  }
+}
+@media (min-width: 1280px) {
+  .apex-prose .align-wide {
+    margin-inline: -120px;
   }
 }
 .apex-prose .align-left {

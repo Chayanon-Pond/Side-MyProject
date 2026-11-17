@@ -22,7 +22,9 @@ export default function RootLayout() {
       </AuthProvider>
       {/* sonner loads on the first toast or when idle (lib/toast.js), not in the main bundle. */}
       <ToasterHost theme={isDark ? "dark" : "light"} />
-      <ScrollRestoration getKey={(location) => location.pathname} />
+      {/* Default key (location.key): Back/Forward restores the old position, every new link opens at the top.
+          Keying by pathname made revisiting an article jump back to wherever you left it (e.g. the footer). */}
+      <ScrollRestoration />
     </MotionProvider>
   );
 }

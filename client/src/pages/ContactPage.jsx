@@ -39,7 +39,7 @@ const ContactPage = () => {
       </PageIntro>
       <RevealGroup className="grid gap-6 md:grid-cols-2">
         {rows.map(({ key, label, Icon, value, href, cta, external, note }) => (
-          <RevealItem key={key} className="card-apex flex flex-col p-6 md:p-8">
+          <RevealItem key={key} className="card-apex flex min-w-0 flex-col p-6 md:p-8">
             <Icon className="h-6 w-6 text-papaya-ink" aria-hidden="true" />
             <h2 className="mt-5 font-display text-xl font-bold">{label}</h2>
             <p className="mt-2 text-sm text-muted">{note}</p>
