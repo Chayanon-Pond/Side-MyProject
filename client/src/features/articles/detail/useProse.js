@@ -42,6 +42,14 @@ export function useProse(containerRef, html) {
     );
     hs.forEach((h) => headingObserver.observe(h.el));
 
+    // Drop cap only when the opening paragraph really is prose: a short first line ("Lightness<br>…") or a
+    // one-liner turns into a stray giant letter ("L ightness").
+    const firstP = root.querySelector(":scope > p");
+    if (firstP) {
+      const firstLine = (firstP.innerHTML.split(/<br\s*\/?>/i)[0] || "").replace(/<[^>]+>/g, "").trim();
+      root.classList.toggle("no-dropcap", firstLine.length < 60 || !/^[A-Za-z]/.test(firstLine));
+    }
+
     const revealTargets = root.querySelectorAll(":scope > figure, :scope > img, :scope > p > img, :scope > iframe, .pull-quote");
     revealTargets.forEach((el) => el.classList.add("reveal-pending"));
     const revealObserver = new IntersectionObserver(

@@ -180,7 +180,7 @@ export default function ArticleDetailPage() {
   if (!article) {
     return (
       <>
-        <div className="h-[86vh] min-h-[520px] animate-pulse bg-[#141416]" aria-hidden="true" />
+        <div className="min-h-[max(520px,86svh)] animate-pulse bg-[#141416]" aria-hidden="true" />
         <BodySkeleton />
       </>
     );

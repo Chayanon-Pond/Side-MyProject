@@ -1,3 +1,4 @@
+import { headlineSize } from "../../../lib/headline";
 import { useEffect, useRef } from "react";
 import { heroProgress, useScrollProgress } from "../../../hooks/useScrollProgress";
 import { prefersReducedMotion } from "../../../lib/motion";
@@ -43,7 +44,7 @@ export default function ArticleHero({ article }) {
   const date = article.published_at || article.created_at;
 
   return (
-    <header ref={ref} className="relative isolate flex h-[86vh] min-h-[520px] items-end overflow-hidden bg-[#0b0b0c] text-hero">
+    <header ref={ref} className="relative isolate flex min-h-[max(520px,86svh)] items-end overflow-hidden bg-[#0b0b0c] text-hero">
       <div ref={layerRef} className="absolute inset-0 -z-10 will-change-transform">
         <img
           src={src}
@@ -65,7 +66,7 @@ export default function ArticleHero({ article }) {
       </div>
       <div className="hero-gradient absolute inset-0 -z-10" aria-hidden="true" />
 
-      <div ref={textRef} className="shell w-full pb-14 md:pb-20">
+      <div ref={textRef} className="shell w-full pb-14 pt-28 md:pb-20 md:pt-32">
         <div style={rise(0.05)} className="anim-rise flex flex-wrap items-center gap-3 font-mono text-xs uppercase tracking-[0.18em]">
           {article.make && (
             <Link to={makePath(article.make)} className="text-[#ff7a2b] hover:underline">
@@ -81,10 +82,10 @@ export default function ArticleHero({ article }) {
         </div>
         <MaskedHeadline
           text={article.title}
-          className="mt-4 max-w-5xl font-expanded text-[clamp(40px,6.2vw,88px)] font-extrabold leading-[0.97] tracking-[-0.02em]"
+          className={`mt-4 max-w-5xl font-expanded font-extrabold leading-[0.97] tracking-[-0.02em] ${headlineSize(article.title, { max: 88 })}`}
         />
         {article.dek && (
-          <p style={rise(0.4)} className="anim-rise mt-6 max-w-2xl font-serif text-xl leading-snug text-[#d6d6d2] md:text-2xl">
+          <p style={rise(0.4)} className="anim-rise mt-6 max-w-2xl font-serif text-lg leading-snug text-[#d6d6d2] sm:text-xl md:text-2xl">
             {article.dek}
           </p>
         )}

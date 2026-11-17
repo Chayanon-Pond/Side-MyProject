@@ -1,3 +1,4 @@
+import { headlineSize } from "../../lib/headline";
 import { useEffect, useRef } from "react";
 import { heroProgress, useScrollProgress } from "../../hooks/useScrollProgress";
 import { prefersReducedMotion } from "../../lib/motion";
@@ -43,7 +44,7 @@ export default function CoverStory({ article }) {
   }, [src]);
 
   return (
-    <section ref={ref} className="relative isolate h-[90vh] min-h-[560px] overflow-hidden bg-[#0b0b0c] text-hero" aria-label="Cover story">
+    <section ref={ref} className="relative isolate flex min-h-[max(560px,90svh)] flex-col overflow-hidden bg-[#0b0b0c] text-hero" aria-label="Cover story">
       <div ref={layerRef} className="absolute inset-0 -z-10 will-change-transform">
         <img
           src={src}
@@ -71,7 +72,8 @@ export default function CoverStory({ article }) {
       </div>
       <div className="hero-gradient absolute inset-0 -z-10" aria-hidden="true" />
 
-      <div ref={textRef} className="shell flex h-full flex-col justify-end pb-14 md:pb-20">
+      {/* grows with long titles; pt clears the fixed 64px nav so the headline never slides under it */}
+      <div ref={textRef} className="shell flex w-full flex-1 flex-col justify-end pb-14 pt-28 md:pb-20 md:pt-32">
         <p style={delay(0.05)} className="anim-rise font-mono text-xs uppercase tracking-[0.18em] text-[#ff7a2b]">
           Cover story · {kickerOf(article)}
         </p>
@@ -79,11 +81,11 @@ export default function CoverStory({ article }) {
           <MaskedHeadline
             as="h1"
             text={article.title}
-            className="font-expanded text-[clamp(44px,7vw,96px)] font-extrabold leading-[0.95] tracking-[-0.02em]"
+            className={`font-expanded font-extrabold leading-[0.95] tracking-[-0.02em] ${headlineSize(article.title)}`}
           />
         </Link>
         {article.dek && (
-          <p style={delay(0.45)} className="anim-rise mt-6 max-w-2xl font-serif text-xl leading-snug text-[#d6d6d2] md:text-2xl">
+          <p style={delay(0.45)} className="anim-rise mt-6 line-clamp-4 max-w-2xl font-serif text-lg leading-snug text-[#d6d6d2] sm:text-xl md:line-clamp-3 md:text-2xl">
             {article.dek}
           </p>
         )}
@@ -125,8 +127,8 @@ export default function CoverStory({ article }) {
 
 export function CoverSkeleton() {
   return (
-    <section className="relative h-[90vh] min-h-[560px] bg-[#0b0b0c]" aria-busy="true" aria-label="Loading cover story">
-      <div className="shell flex h-full flex-col justify-end gap-4 pb-20">
+    <section className="relative flex min-h-[max(560px,90svh)] flex-col bg-[#0b0b0c]" aria-busy="true" aria-label="Loading cover story">
+      <div className="shell flex w-full flex-1 flex-col justify-end gap-4 pb-20 pt-28">
         <div className="h-3 w-40 animate-pulse rounded-[2px] bg-white/10" />
         <div className="h-16 w-4/5 animate-pulse rounded-[2px] bg-white/10" />
         <div className="h-16 w-3/5 animate-pulse rounded-[2px] bg-white/10" />
